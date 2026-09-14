@@ -216,3 +216,88 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local secrets and private-key material
+.env.*
+!.env.example
+!.env.sample
+!.env.template
+.secrets/
+secrets/
+credentials/
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.kdbx
+
+# Cloud provider credentials and local profiles
+.aws/
+aws-credentials*
+.gcloud/
+gcloud-credentials*.json
+*service-account*.json
+.azure/
+azureCredentials.json
+azureProfile.json
+*.publishsettings
+
+# Data-platform credentials and local state
+.snowflake/
+.snowsql/
+snowflake-credentials.*
+snowflake-connections.*
+.databricks/
+.databrickscfg
+databricks-token*
+
+# Kubernetes and infrastructure state
+.kube/
+kubeconfig*
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+!example.tfvars
+!sample.tfvars
+!*.example.tfvars
+!*.sample.tfvars
+.terraform/
+terraform.tfstate.d/
+
+# Data, analytics, and machine-learning local artifacts
+.dvc/cache/
+.dagster/
+.prefect/
+.great_expectations/uncommitted/
+mlruns/
+.mlflow/
+wandb/
+lightning_logs/
+ray_results/
+spark-warehouse/
+metastore_db/
+derby.log
+*.duckdb
+*.sqlite
+*.sqlite3
+*.db
+data/raw/
+data/interim/
+data/processed/
+
+# Common local development artifacts
+node_modules/
+.npm/
+.pnpm-store/
+.yarn/
+.next/
+.nuxt/
+.svelte-kit/
+.turbo/
+.parcel-cache/
+.vite/
+.idea/
+.DS_Store
+Thumbs.db
