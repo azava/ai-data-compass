@@ -107,4 +107,7 @@ Metrics should cover:
 
 Project-specific completion checklist: [`docs/task-completion.md`](docs/task-completion.md)
 
-- Review all related documentation, descriptions, tests, assertions, and validation automations to ensure they are accurate and consistent with the implemented behavior.
+ - Run all applicable repository tests, assertions, validations, and similar checks.
+ - Run the Repository Quality and Metadata Metrics. AI code editors should compare the metrics after their changes with the last stable metrics for the environment. Each metric should improve or remain stable; AI code editors should justify every change.
+ - Verify that assertions, tests, and validations are updated and accurate.
+ - Review that documentation is updated and accurate.
