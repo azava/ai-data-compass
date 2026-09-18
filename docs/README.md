@@ -14,3 +14,4 @@ AI coding agents must review the relevant files in `/docs` before starting work 
 - [Project Documentation](project-documentation.md)
 - [Repository Quality and Metadata Metrics](repository-quality-and-metadata-metrics.md)
 - [Task Completion](task-completion.md)
+- [AI Agent Skills](ai-agent-skills.md)
