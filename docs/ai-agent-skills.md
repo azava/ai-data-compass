@@ -31,3 +31,14 @@ Skills are trusted repository instructions and must be reviewed like executable
 code. Security-sensitive skills must use local, deterministic tools where
 possible, avoid external network calls unless explicitly required, and never
 expose secret or personally identifiable values in output.
+
+## Pull request enforcement
+
+The repository runs `security-audit` for pull requests when they are opened,
+updated, reopened, or edited. The workflow scans both the pull request working
+tree and its Git history with `--fail-on-findings`.
+
+The workflow obtains the scanner from the trusted base commit and scans the
+pull request checkout separately. This prevents a pull request from changing
+the scanner used to validate itself. The scanner output is limited to redacted
+metadata.
