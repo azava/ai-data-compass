@@ -81,8 +81,34 @@ Project-specific documentation requirements: [`docs/project-documentation.md`](d
 - Update relevant documentation when project behavior, interfaces, constraints, or operational procedures change.
 - Keep documentation concise, organized by topic, and consistent with the implemented behavior.
 
-## 7. Before Considering a Task Done
+## 7. Repository Quality and Metadata Metrics
+
+Project-specific repository quality and metadata metrics context: [`docs/repository-quality-and-metadata-metrics.md`](docs/repository-quality-and-metadata-metrics.md)
+
+Repositories should implement quality and metadata metrics to evaluate their state over time and provide a fast feedback cycle for AI code editors.
+
+Metrics should cover:
+
+- Data quality, including data validation and test coverage.
+- Documentation of tables and columns.
+- Security, including privacy and regulatory compliance.
+- Data lineage.
+- Data governance, including ownership, access policies, retention, and metadata stewardship.
+- Code quality, including adherence to the standards of the technology used.
+- Data freshness and timeliness.
+- Data observability, including monitoring, alerting, and anomaly detection.
+- Data reliability, including availability, completeness, and consistency of pipeline outputs.
+- Schema evolution and compatibility.
+- Reproducibility and idempotency.
+- Performance and cost efficiency.
+- Operational resilience, including failure handling, recovery, retry behavior, and rerun safety.
+
+## 8. Before Considering a Task Done
 
 Project-specific completion checklist: [`docs/task-completion.md`](docs/task-completion.md)
 
-- Review all related documentation, descriptions, tests, assertions, and validation automations to ensure they are accurate and consistent with the implemented behavior.
+ - Run all applicable repository tests, assertions, validations, and similar checks.
+ - Run the Repository Quality and Metadata Metrics. AI code editors should compare the metrics after their changes with the last stable metrics for the environment. Each metric should improve or remain stable; AI code editors must justify every change.
+ - Verify that assertions, tests, and validations are updated and accurate.
+ - Review that documentation is updated and accurate.
+ - Review repository files and relevant Git history for accidental credentials, sensitive data, PII, or PHI without exposing matched values.
