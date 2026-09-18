@@ -111,4 +111,4 @@ Project-specific completion checklist: [`docs/task-completion.md`](docs/task-com
  - Run the Repository Quality and Metadata Metrics. AI code editors should compare the metrics after their changes with the last stable metrics for the environment. Each metric should improve or remain stable; AI code editors must justify every change.
  - Verify that assertions, tests, and validations are updated and accurate.
  - Review that documentation is updated and accurate.
- - Review repository files and relevant Git history for accidental credentials, sensitive data, PII, or PHI without exposing matched values.
+ - Review repository files and relevant Git history for accidental credentials, sensitive data, PII, or PHI without exposing matched values. Use the `security-audit` skill as part of this review; if the agent cannot open or invoke the skill directly, read and follow `.agents/skills/security-audit/SKILL.md`.
