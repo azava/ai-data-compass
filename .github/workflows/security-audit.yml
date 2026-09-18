@@ -1,0 +1,60 @@
+name: Security Audit
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+permissions:
+  contents: read
+
+jobs:
+  security-audit:
+    name: Scan pull request contents
+    runs-on: ubuntu-latest
+
+    steps:
+      # Use the base commit as the trusted source for the scanner.
+      - name: Checkout trusted base
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          fetch-depth: 0
+          path: trusted
+
+      # Check out the pull request commit as the scan target.
+      - name: Checkout pull request
+        uses: actions/checkout@v5
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          path: candidate
+
+      - name: Run security scans
+        env:
+          TRUSTED_ROOT: ${{ github.workspace }}/trusted
+          CANDIDATE_ROOT: ${{ github.workspace }}/candidate
+        run: |
+          set +e
+
+          # Run both scan scopes; the scanner emits metadata-only reports.
+          bash "$TRUSTED_ROOT/.agents/skills/security-audit/scripts/security-surface.sh" \
+            --root "$CANDIDATE_ROOT" \
+            --mode working-tree \
+            --format markdown \
+            --fail-on-findings
+          working_status=$?
+
+          bash "$TRUSTED_ROOT/.agents/skills/security-audit/scripts/security-surface.sh" \
+            --root "$CANDIDATE_ROOT" \
+            --mode history \
+            --format markdown \
+            --fail-on-findings
+          history_status=$?
+
+          set -e
+
+          # Fail the pull request check if either scan found candidates or failed.
+          if [ "$working_status" -ne 0 ] || [ "$history_status" -ne 0 ]; then
+            exit 1
+          fi
