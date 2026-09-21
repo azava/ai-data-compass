@@ -1,0 +1,103 @@
+name: Tests
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Prepare build tools
+        run: |
+          echo "::group::Install build tools"
+          python -m pip install --upgrade pip setuptools
+          echo "::endgroup::"
+
+      - name: Install package in editable mode
+        run: |
+          echo "::group::Install ai-data-compass"
+          python -m pip install --no-deps -e .
+          echo "::endgroup::"
+
+      - name: Run test suite
+        run: |
+          set +e
+          echo "::group::Run unit, distribution, and CLI tests"
+          PYTHONPATH=src python -m unittest discover -s tests -v
+          status=$?
+          echo "::endgroup::"
+          set -e
+
+          if [ "$status" -eq 0 ]; then
+            result="Passed"
+          else
+            result="Failed"
+          fi
+          {
+            echo "## Test results"
+            echo "- Python: `${{ matrix.python-version }}`"
+            echo "- Scope: unit, distribution, packaging, and CLI tests"
+            echo "- Result: **${result}**"
+            echo
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
+
+      - name: Compile source and tests
+        run: |
+          echo "::group::Compile Python sources"
+          python -m compileall -q src tests
+          echo "Compilation passed."
+          echo "::endgroup::"
+
+      - name: Run security skill regression tests
+        run: |
+          set +e
+          echo "::group::Run security skill shell tests"
+          status=0
+          for test in .ai-data-compass/skills/security-audit/tests/*.sh; do
+            bash "$test"
+            status=$?
+            if [ "$status" -ne 0 ]; then
+              break
+            fi
+          done
+          echo "::endgroup::"
+          set -e
+
+          if [ "$status" -eq 0 ]; then
+            result="Passed"
+          else
+            result="Failed"
+          fi
+          {
+            echo "## Security skill regression tests"
+            echo "- Result: **${result}**"
+            echo
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"

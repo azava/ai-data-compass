@@ -30,6 +30,39 @@ assumptions:
 - [Repository quality and metadata metrics](.ai-data-compass/docs/repository-quality-and-metadata-metrics.md)
 - [Task completion checklist](.ai-data-compass/docs/task-completion.md)
 
+## Installation
+
+The command-line tool is packaged as the `ai-data-compass` Python package for
+Python 3.9 and newer. Install it with pip in the target Python
+environment:
+
+```bash
+python -m pip install ai-data-compass
+ai-data-compass --version
+```
+
+For a globally available CLI isolated from other Python environments, use
+pipx instead:
+
+```bash
+pipx install ai-data-compass
+ai-data-compass --version
+```
+
+The CLI exposes `--version`, `init`, and `verify`. The base documentation is
+installed with every asset selection. Select everything, the agent
+instructions, one skill, or all skills with comma-separated values:
+
+```bash
+ai-data-compass init --assets complete
+ai-data-compass init --assets agents.md,security_audit
+ai-data-compass init --assets skills
+```
+
+Running `init` without `--assets` opens an interactive asset installer. It
+defaults to `complete` when the selection is left empty. The interactive
+output uses terminal colors when supported and honors `NO_COLOR`.
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE).

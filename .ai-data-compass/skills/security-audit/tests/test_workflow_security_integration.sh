@@ -37,6 +37,56 @@ assert_not_contains 'SCANNER="$CANDIDATE_ROOT/'
 assert_not_contains 'bash "$CANDIDATE_ROOT/.ai-data-compass/'
 assert_not_contains 'bash "$CANDIDATE_ROOT/.agents/'
 
-[[ $(grep -cF 'bash "$SCANNER"' "$WORKFLOW") -eq 2 ]] || fail 'working-tree and history scans must use the trusted scanner'
+assert_contains 'scan_mode working-tree'
+assert_contains 'scan_mode history'
+[[ $(grep -cF 'bash "$SCANNER"' "$WORKFLOW") -eq 1 ]] || fail 'scanner invocation must remain inside scan_mode'
+[[ $(grep -cF 'set +e' "$WORKFLOW") -eq 1 ]] || fail 'errexit must be disabled only around scan result collection'
+
+# Execute the function extracted from the workflow so a failing working-tree
+# scan cannot prevent the history scan from running.
+RUNTIME_ROOT=$(mktemp -d)
+trap 'rm -rf "$RUNTIME_ROOT"' EXIT
+RUNTIME_FUNCTION="$RUNTIME_ROOT/scan-mode.sh"
+sed -n '/^          scan_mode() {/,/^          }$/p' "$WORKFLOW" | sed 's/^          //' > "$RUNTIME_FUNCTION"
+[[ -s $RUNTIME_FUNCTION ]] || fail 'scan_mode function could not be extracted'
+
+FAKE_SCANNER="$RUNTIME_ROOT/scanner.sh"
+CALL_LOG="$RUNTIME_ROOT/calls.log"
+cat > "$FAKE_SCANNER" <<'SCANNER'
+#!/usr/bin/env bash
+set -u
+case " $* " in
+    *" --mode working-tree "*)
+        printf '%s\n' working-tree >> "$CALL_LOG"
+        exit 1
+        ;;
+    *" --mode history "*)
+        printf '%s\n' history >> "$CALL_LOG"
+        exit 0
+        ;;
+    *)
+        exit 2
+        ;;
+esac
+SCANNER
+chmod +x "$FAKE_SCANNER"
+export CALL_LOG
+export SCANNER="$FAKE_SCANNER"
+export CANDIDATE_ROOT="$RUNTIME_ROOT/candidate"
+export RUNNER_TEMP="$RUNTIME_ROOT/reports"
+export GITHUB_STEP_SUMMARY="$RUNTIME_ROOT/summary.md"
+mkdir -p "$CANDIDATE_ROOT" "$RUNNER_TEMP"
+# shellcheck disable=SC1090
+source "$RUNTIME_FUNCTION"
+set +e
+scan_mode working-tree
+working_status=$?
+scan_mode history
+history_status=$?
+set -e
+[[ $working_status -eq 1 ]] || fail 'working-tree scanner status was not preserved'
+[[ $history_status -eq 0 ]] || fail 'history scanner status was not preserved'
+[[ $(wc -l < "$CALL_LOG") -eq 2 ]] || fail 'history scan did not run after working-tree failure'
+grep -Fx history "$CALL_LOG" >/dev/null || fail 'history scan invocation was not recorded'
 
 printf '%s\n' 'workflow security integration tests passed'

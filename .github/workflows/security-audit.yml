@@ -3,43 +3,48 @@ name: Security Audit
 on:
   pull_request:
     types: [opened, synchronize, reopened, edited]
+  push:
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: security-audit-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   security-audit:
-    name: Scan pull request contents
+    name: Scan repository contents
     runs-on: ubuntu-latest
 
     steps:
-      # Use the base commit as the trusted source for the scanner.
-      - name: Checkout trusted base
+      - name: Checkout trusted scanner source
         uses: actions/checkout@v5
         with:
-          ref: ${{ github.event.pull_request.base.sha }}
+          # PRs use the base revision as the trusted source. Pushes to main
+          # and manual runs use the current protected repository revision.
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.sha }}
           fetch-depth: 0
           path: trusted
 
-      # Check out the pull request commit as the scan target.
-      - name: Checkout pull request
+      - name: Checkout scan target
         uses: actions/checkout@v5
         with:
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          ref: ${{ github.event.pull_request.head.sha }}
+          repository: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
           path: candidate
 
-      - name: Run security scans
+      - name: Run metadata-only security scans
         env:
           TRUSTED_ROOT: ${{ github.workspace }}/trusted
           CANDIDATE_ROOT: ${{ github.workspace }}/candidate
         run: |
-          set +e
+          set -euo pipefail
 
-          # Resolve the scanner only from the trusted base checkout. Keep the
-          # legacy path as a transition fallback while the canonical asset
-          # location is adopted by the default branch.
+          echo "::group::Resolve trusted scanner"
           if [ -x "$TRUSTED_ROOT/.ai-data-compass/skills/security-audit/scripts/security-surface.sh" ]; then
             SCANNER="$TRUSTED_ROOT/.ai-data-compass/skills/security-audit/scripts/security-surface.sh"
           elif [ -x "$TRUSTED_ROOT/.agents/skills/security-audit/scripts/security-surface.sh" ]; then
@@ -48,25 +53,38 @@ jobs:
             echo "Trusted security scanner was not found."
             exit 2
           fi
+          echo "Using scanner from the trusted checkout."
+          echo "::endgroup::"
 
-          # Run both scan scopes; the scanner emits metadata-only reports.
-          bash "$SCANNER" \
-            --root "$CANDIDATE_ROOT" \
-            --mode working-tree \
-            --format markdown \
-            --fail-on-findings
+          scan_mode() {
+            local mode="$1"
+            local report="$RUNNER_TEMP/security-${mode}.md"
+            echo "::group::Security scan: ${mode}"
+            bash "$SCANNER" \
+              --root "$CANDIDATE_ROOT" \
+              --mode "$mode" \
+              --format markdown \
+              --fail-on-findings | tee "$report"
+            local status=${PIPESTATUS[0]}
+            echo "::endgroup::"
+            {
+              echo "## Security scan: ${mode}"
+              cat "$report"
+              echo
+            } >> "$GITHUB_STEP_SUMMARY"
+            return "$status"
+          }
+
+          set +e
+          scan_mode working-tree
           working_status=$?
-
-          bash "$SCANNER" \
-            --root "$CANDIDATE_ROOT" \
-            --mode history \
-            --format markdown \
-            --fail-on-findings
+          scan_mode history
           history_status=$?
-
           set -e
 
-          # Fail the pull request check if either scan found candidates or failed.
           if [ "$working_status" -ne 0 ] || [ "$history_status" -ne 0 ]; then
+            echo "Security audit failed: review the metadata-only reports above."
             exit 1
           fi
+
+          echo "Security audit passed: no actionable findings were reported."
