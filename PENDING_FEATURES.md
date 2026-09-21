@@ -1,7 +1,7 @@
 # Pending Features
 
 This is an internal backlog for AI Data Compass. It is intentionally stored at
-the repository root because the content under `docs/` is intended to become
+the repository root because the content under `.ai-data-compass/docs/` is intended to become
 exportable project assets for repositories that adopt AI Data Compass.
 
 The numbers below are stable reference identifiers only. They are not priority
@@ -198,7 +198,7 @@ and privacy considerations.
 
 ## 5. Exportable documentation assets
 
-Make it explicit which files under `docs/` are reusable assets intended to be
+Make it explicit which files under `.ai-data-compass/docs/` are reusable assets intended to be
 copied or composed into adopting projects, and which files are specific to the
 AI Data Compass repository itself.
 

@@ -37,15 +37,27 @@ jobs:
         run: |
           set +e
 
+          # Resolve the scanner only from the trusted base checkout. Keep the
+          # legacy path as a transition fallback while the canonical asset
+          # location is adopted by the default branch.
+          if [ -x "$TRUSTED_ROOT/.ai-data-compass/skills/security-audit/scripts/security-surface.sh" ]; then
+            SCANNER="$TRUSTED_ROOT/.ai-data-compass/skills/security-audit/scripts/security-surface.sh"
+          elif [ -x "$TRUSTED_ROOT/.agents/skills/security-audit/scripts/security-surface.sh" ]; then
+            SCANNER="$TRUSTED_ROOT/.agents/skills/security-audit/scripts/security-surface.sh"
+          else
+            echo "Trusted security scanner was not found."
+            exit 2
+          fi
+
           # Run both scan scopes; the scanner emits metadata-only reports.
-          bash "$TRUSTED_ROOT/.agents/skills/security-audit/scripts/security-surface.sh" \
+          bash "$SCANNER" \
             --root "$CANDIDATE_ROOT" \
             --mode working-tree \
             --format markdown \
             --fail-on-findings
           working_status=$?
 
-          bash "$TRUSTED_ROOT/.agents/skills/security-audit/scripts/security-surface.sh" \
+          bash "$SCANNER" \
             --root "$CANDIDATE_ROOT" \
             --mode history \
             --format markdown \

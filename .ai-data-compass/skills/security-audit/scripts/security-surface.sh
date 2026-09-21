@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Canonical scanner for the AI Data Compass security-audit skill.
 
 set -euo pipefail
 

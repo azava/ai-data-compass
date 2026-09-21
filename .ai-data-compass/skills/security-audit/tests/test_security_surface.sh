@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Canonical synthetic regression tests for the security scanner.
 
 set -euo pipefail
 
@@ -36,11 +37,16 @@ password_key=pass"word"
 fixture_value="synthetic-value-$(printf '%s' fixture | sha256sum | cut -c1-12)"
 printf '%s=%s\n' "$password_key" "$fixture_value" > "$TEST_ROOT/repo/config/settings.env"
 printf '%s\n' 'ordinary documentation' > "$TEST_ROOT/repo/README.md"
+ln -s README.md "$TEST_ROOT/repo/documentation-link"
+# Git reports the symlink as a candidate; it does not report the FIFO.
+mkfifo "$TEST_ROOT/repo/metadata-pipe"
 
 # Verify working-tree detection and redaction.
 working_report=$(bash "$SCANNER" --root "$TEST_ROOT/repo" --mode working-tree --format json)
 assert_contains "$working_report" 'credential.filename'
 assert_contains "$working_report" 'credential.assignment'
+assert_contains "$working_report" '"files_skipped":1'
+assert_contains "$working_report" 'some files were skipped because they were not regular readable files'
 assert_not_contains "$working_report" "$fixture_value"
 assert_not_contains "$working_report" 'password='
 

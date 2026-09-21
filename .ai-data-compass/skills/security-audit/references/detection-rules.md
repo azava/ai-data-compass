@@ -1,5 +1,7 @@
 # Detection rules
 
+Canonical detection-rule reference for the AI Data Compass security-audit skill.
+
 The scanner reports candidates, not confirmed incidents. Rules are intentionally conservative and never include matched values in output.
 
 | Rule | Category | Severity | Confidence | Scope |
