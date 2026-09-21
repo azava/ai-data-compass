@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Canonical scanner for the AI Data Compass security-audit skill.
 
 set -euo pipefail
 
@@ -11,6 +12,14 @@ FAIL_ON_FINDINGS=0
 
 # Keep only redacted findings and scan metadata in memory.
 declare -a FINDINGS=()
+declare -a FINDING_SOURCE=()
+declare -a FINDING_FILE=()
+declare -a FINDING_LINE=()
+declare -a FINDING_RULE=()
+declare -a FINDING_CATEGORY=()
+declare -a FINDING_SEVERITY=()
+declare -a FINDING_CONFIDENCE=()
+declare -a FINDING_COMMIT=()
 declare -a WARNINGS=()
 declare -A SEEN=()
 FILES_SCANNED=0
@@ -37,7 +46,7 @@ json_escape() {
     # Escape metadata before placing it in JSON output.
     local value=$1
     value=${value//\\/\\\\}
-    value=${value//"/\\"}
+    value=${value//\"/\\\"}
     value=${value//$'\n'/\\n}
     value=${value//$'\r'/\\r}
     value=${value//$'\t'/\\t}
@@ -57,17 +66,26 @@ current_commit() {
 add_finding() {
     # Add a unique metadata-only finding.
     local source=$1 file=$2 line=$3 rule_id=$4 category=$5 severity=$6 confidence=$7 commit=${8:-}
-    local key="${source}|${commit}|${file}|${line}|${rule_id}"
-
-    [[ ${SEEN[$key]+yes} ]] && return 0
-    SEEN[$key]=1
-
     if (( ${#FINDINGS[@]} >= MAX_FINDINGS )); then
         TRUNCATED=1
         return 0
     fi
 
-    FINDINGS+=("$source|$file|$line|$rule_id|$category|$severity|$confidence|$commit")
+    local key="${source}"$'\x1f'"${commit}"$'\x1f'"${file}"$'\x1f'"${line}"$'\x1f'"${rule_id}"
+
+    [[ ${SEEN[$key]+yes} ]] && return 0
+    SEEN[$key]=1
+
+    local index=${#FINDINGS[@]}
+    FINDINGS+=("$index")
+    FINDING_SOURCE+=("$source")
+    FINDING_FILE+=("$file")
+    FINDING_LINE+=("$line")
+    FINDING_RULE+=("$rule_id")
+    FINDING_CATEGORY+=("$category")
+    FINDING_SEVERITY+=("$severity")
+    FINDING_CONFIDENCE+=("$confidence")
+    FINDING_COMMIT+=("$commit")
 }
 
 scan_file_pattern() {
@@ -98,17 +116,17 @@ scan_file() {
             ;;
     esac
 
-    scan_file_pattern "$file" '-----BEGIN (RSA|DSA|EC|OPENSSH|PGP|[A-Z ]*PRIVATE) KEY-----' \
+    scan_file_pattern "$file" "$PRIVATE_KEY_PATTERN" \
         "credential.private-key" "credential" "critical" "confirmed"
-    scan_file_pattern "$file" '(^|[^[:alnum:]_])(password|passwd|pwd|secret|token|api[_-]?key|access[_-]?key|client[_-]?secret|private[_-]?key)[[:space:]]*[:=][[:space:]]*[A-Za-z0-9_./+=:-]{8,}' \
+    scan_file_pattern "$file" "$ASSIGNMENT_PATTERN" \
         "credential.assignment" "credential" "high" "likely"
-    scan_file_pattern "$file" '(^|[^[:alnum:]_])[Aa]uthorization[[:space:]]*:[[:space:]]*(Bearer|Basic)[[:space:]]+[A-Za-z0-9_./+=:-]{12,}' \
+    scan_file_pattern "$file" "$AUTHORIZATION_PATTERN" \
         "credential.authorization" "credential" "high" "likely"
-    scan_file_pattern "$file" '(^|[^[:alnum:]_])eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}([^A-Za-z0-9_-]|$)' \
+    scan_file_pattern "$file" "$JWT_PATTERN" \
         "credential.jwt" "credential" "high" "likely"
-    scan_file_pattern "$file" '[A-Za-z][A-Za-z0-9+.-]{1,20}://[^[:space:]/:@]+:[^[:space:]/:@]+@' \
+    scan_file_pattern "$file" "$URL_AUTH_PATTERN" \
         "credential.url-auth" "credential" "high" "likely"
-    scan_file_pattern "$file" '(^|[^A-Za-z0-9])(AKIA|ASIA)[A-Z0-9]{16}([^A-Za-z0-9]|$)' \
+    scan_file_pattern "$file" "$PROVIDER_KEY_PATTERN" \
         "credential.provider-key" "credential" "high" "likely"
 }
 
@@ -121,36 +139,33 @@ scan_working_tree() {
     done < <(git ls-files -co --exclude-standard -z)
 }
 
-scan_history_pattern() {
-    # Search one commit and keep only file and line metadata.
-    local commit=$1 pattern=$2 rule_id=$3 category=$4 severity=$5 confidence=$6
-    local file line
-
-    while IFS=$'\t' read -r file line; do
-        [[ $line =~ ^[0-9]+$ ]] || continue
-        add_finding "git-history" "$file" "$line" "$rule_id" "$category" "$severity" "$confidence" "$commit"
-    done < <(git grep -nI -E -e "$pattern" "$commit" -- 2>/dev/null | awk -F: '{print $2 "\t" $3}')
-}
-
 scan_history() {
     # Scan every reachable commit in the repository history.
-    local commit
+    local commit prefix file line content
 
     while IFS= read -r commit; do
         [[ -n $commit ]] || continue
         COMMITS_SCANNED=$((COMMITS_SCANNED + 1))
-        scan_history_pattern "$commit" '-----BEGIN (RSA|DSA|EC|OPENSSH|PGP|[A-Z ]*PRIVATE) KEY-----' \
-            "credential.private-key" "credential" "critical" "confirmed"
-        scan_history_pattern "$commit" '(^|[^[:alnum:]_])(password|passwd|pwd|secret|token|api[_-]?key|access[_-]?key|client[_-]?secret|private[_-]?key)[[:space:]]*[:=][[:space:]]*[A-Za-z0-9_./+=:-]{8,}' \
-            "credential.assignment" "credential" "high" "likely"
-        scan_history_pattern "$commit" '(^|[^[:alnum:]_])[Aa]uthorization[[:space:]]*:[[:space:]]*(Bearer|Basic)[[:space:]]+[A-Za-z0-9_./+=:-]{12,}' \
-            "credential.authorization" "credential" "high" "likely"
-        scan_history_pattern "$commit" '(^|[^[:alnum:]_])eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}([^A-Za-z0-9_-]|$)' \
-            "credential.jwt" "credential" "high" "likely"
-        scan_history_pattern "$commit" '[A-Za-z][A-Za-z0-9+.-]{1,20}://[^[:space:]/:@]+:[^[:space:]/:@]+@' \
-            "credential.url-auth" "credential" "high" "likely"
-        scan_history_pattern "$commit" '(^|[^A-Za-z0-9])(AKIA|ASIA)[A-Z0-9]{16}([^A-Za-z0-9]|$)' \
-            "credential.provider-key" "credential" "high" "likely"
+        while IFS= read -r -d '' prefix && IFS= read -r -d '' line; do
+            IFS= read -r content || true
+            [[ $line =~ ^[0-9]+$ ]] || continue
+            file=${prefix:41}
+            [[ -n $file ]] || continue
+            [[ $content =~ $PRIVATE_KEY_PATTERN ]] && add_finding "git-history" "$file" "$line" "credential.private-key" "credential" "critical" "confirmed" "$commit"
+            [[ $content =~ $ASSIGNMENT_PATTERN ]] && add_finding "git-history" "$file" "$line" "credential.assignment" "credential" "high" "likely" "$commit"
+            [[ $content =~ $AUTHORIZATION_PATTERN ]] && add_finding "git-history" "$file" "$line" "credential.authorization" "credential" "high" "likely" "$commit"
+            [[ $content =~ $JWT_PATTERN ]] && add_finding "git-history" "$file" "$line" "credential.jwt" "credential" "high" "likely" "$commit"
+            [[ $content =~ $URL_AUTH_PATTERN ]] && add_finding "git-history" "$file" "$line" "credential.url-auth" "credential" "high" "likely" "$commit"
+            [[ $content =~ $PROVIDER_KEY_PATTERN ]] && add_finding "git-history" "$file" "$line" "credential.provider-key" "credential" "high" "likely" "$commit"
+        done < <(git grep -nI -z -E -e "$HISTORY_PATTERN" "$commit" -- 2>/dev/null)
+
+        while IFS= read -r -d '' file; do
+            case ${file,,} in
+                *.env|*.env.*|*credential*|*secret*|*token*|*.pem|*.key|*id_rsa*)
+                    add_finding "git-history" "$file" 0 "credential.filename" "credential" "medium" "possible" "$commit"
+                    ;;
+            esac
+        done < <(git ls-tree -r --name-only -z "$commit" 2>/dev/null)
     done < <(git rev-list --all)
 }
 
@@ -183,16 +198,14 @@ emit_markdown() {
         return 0
     fi
 
-    local finding source file line rule category severity confidence commit
-    for finding in "${FINDINGS[@]}"; do
-        IFS='|' read -r source file line rule category severity confidence commit <<< "$finding"
-        printf '%s\n' "- source=$source file=$file line=$line rule=$rule category=$category severity=$severity confidence=$confidence${commit:+ commit=$commit}"
+    local index
+    for index in "${!FINDINGS[@]}"; do
+        printf '%s\n' "- source=${FINDING_SOURCE[$index]} file=${FINDING_FILE[$index]} line=${FINDING_LINE[$index]} rule=${FINDING_RULE[$index]} category=${FINDING_CATEGORY[$index]} severity=${FINDING_SEVERITY[$index]} confidence=${FINDING_CONFIDENCE[$index]}${FINDING_COMMIT[$index]:+ commit=${FINDING_COMMIT[$index]}}"
     done
 }
 
 emit_json() {
     # Print a redacted machine-readable report.
-    local finding source file line rule category severity confidence commit
     printf '{"mode":"%s","commit":"%s"' \
         "$(json_escape "$MODE")" "$(json_escape "$(current_commit)")"
     if [[ $MODE == history ]]; then
@@ -207,15 +220,15 @@ emit_json() {
         "$FILES_SKIPPED" "${#FINDINGS[@]}" "$([[ $TRUNCATED -eq 1 ]] && printf true || printf false)"
 
     local first=1
-    for finding in "${FINDINGS[@]}"; do
-        IFS='|' read -r source file line rule category severity confidence commit <<< "$finding"
+    local index
+    for index in "${!FINDINGS[@]}"; do
         (( first )) || printf ','
         first=0
         printf '{"source":"%s","file":"%s","line":%d,"rule_id":"%s","category":"%s","severity":"%s","confidence":"%s"' \
-            "$(json_escape "$source")" "$(json_escape "$file")" "$line" "$(json_escape "$rule")" \
-            "$(json_escape "$category")" "$(json_escape "$severity")" "$(json_escape "$confidence")"
-        if [[ -n $commit ]]; then
-            printf ',"commit":"%s"' "$(json_escape "$commit")"
+            "$(json_escape "${FINDING_SOURCE[$index]}")" "$(json_escape "${FINDING_FILE[$index]}")" "${FINDING_LINE[$index]}" "$(json_escape "${FINDING_RULE[$index]}")" \
+            "$(json_escape "${FINDING_CATEGORY[$index]}")" "$(json_escape "${FINDING_SEVERITY[$index]}")" "$(json_escape "${FINDING_CONFIDENCE[$index]}")"
+        if [[ -n ${FINDING_COMMIT[$index]} ]]; then
+            printf ',"commit":"%s"' "$(json_escape "${FINDING_COMMIT[$index]}")"
         fi
         printf '}'
     done
@@ -230,6 +243,14 @@ emit_json() {
 }
 
 # Parse command-line options before scanning.
+PRIVATE_KEY_PATTERN='-----BEGIN (RSA|DSA|EC|OPENSSH|PGP|[A-Z ]*PRIVATE) KEY-----'
+ASSIGNMENT_PATTERN="(^|[^[:alnum:]_])[\"']?(password|passwd|pwd|secret|token|api[_-]?key|access[_-]?key|client[_-]?secret|private[_-]?key)[\"']?[[:space:]]*[:=][[:space:]]*[\"']?[A-Za-z0-9_./+=:-]{8,}[\"']?"
+AUTHORIZATION_PATTERN='(^|[^[:alnum:]_])[Aa]uthorization[[:space:]]*:[[:space:]]*(Bearer|Basic)[[:space:]]+[A-Za-z0-9_./+=:-]{12,}'
+JWT_PATTERN='(^|[^[:alnum:]_])eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}([^A-Za-z0-9_-]|$)'
+URL_AUTH_PATTERN='[A-Za-z][A-Za-z0-9+.-]{1,20}://[^[:space:]/:@]+:[^[:space:]/:@]+@'
+PROVIDER_KEY_PATTERN='(^|[^A-Za-z0-9])(AKIA|ASIA)[A-Z0-9]{16}([^A-Za-z0-9]|$)'
+HISTORY_PATTERN="(${PRIVATE_KEY_PATTERN}|${ASSIGNMENT_PATTERN}|${AUTHORIZATION_PATTERN}|${JWT_PATTERN}|${URL_AUTH_PATTERN}|${PROVIDER_KEY_PATTERN})"
+
 while (($#)); do
     case $1 in
         --root) ROOT=${2:?missing value for --root}; shift 2 ;;
