@@ -36,11 +36,22 @@ password_key=pass"word"
 fixture_value="synthetic-value-$(printf '%s' fixture | sha256sum | cut -c1-12)"
 printf '%s=%s\n' "$password_key" "$fixture_value" > "$TEST_ROOT/repo/config/settings.env"
 printf '%s\n' 'ordinary documentation' > "$TEST_ROOT/repo/README.md"
+url_scheme=https
+url_user=user
+url_value=synthetic-pass
+url_host=host.invalid
+printf '%s://%s:%s@%s\n' "$url_scheme" "$url_user" "$url_value" "$url_host" > "$TEST_ROOT/repo/config/url.txt"
+safe_url_path='/@vite/client'
+safe_url="http://localhost:5173${safe_url_path}"
+printf '%s\n' "$safe_url" > "$TEST_ROOT/repo/frontend.js"
 
 # Verify working-tree detection and redaction.
 working_report=$(bash "$SCANNER" --root "$TEST_ROOT/repo" --mode working-tree --format json)
 assert_contains "$working_report" 'credential.filename'
 assert_contains "$working_report" 'credential.assignment'
+assert_contains "$working_report" 'credential.url-auth'
+url_finding_count=$(printf '%s' "$working_report" | grep -o '"rule_id":"credential.url-auth"' | wc -l)
+[[ $url_finding_count -eq 1 ]] || fail 'safe development URLs must not create URL credential findings'
 assert_not_contains "$working_report" "$fixture_value"
 assert_not_contains "$working_report" 'password='
 
