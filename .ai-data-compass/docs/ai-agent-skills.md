@@ -12,7 +12,7 @@ scripts, and tests in that directory are the source of truth.
 ## Codex discovery adapter
 
 Codex discovers repository skills under
-`.agents/skills/<skill-name>/SKILL.md`. The CLI should generate a small
+`.agents/skills/<skill-name>/SKILL.md`. The distribution installs a small
 discovery adapter there that points to the canonical skill under
 `.ai-data-compass/skills/`.
 
@@ -22,9 +22,9 @@ security logic.
 ## Claude Code projection
 
 Claude Code discovers project skills under
-`.claude/skills/<skill-name>/SKILL.md`. Each Claude adapter should be a small,
-versioned entry point to the canonical skill and should not duplicate its
-workflow or scanner logic.
+`.claude/skills/<skill-name>/SKILL.md`. The distribution installs each Claude
+adapter as a small, versioned entry point to the canonical skill. Adapters
+must not duplicate the canonical workflow or scanner logic.
 
 ## Adding or changing a skill
 
