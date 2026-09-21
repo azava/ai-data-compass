@@ -106,7 +106,7 @@ scan_file() {
         "credential.authorization" "credential" "high" "likely"
     scan_file_pattern "$file" '(^|[^[:alnum:]_])eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}([^A-Za-z0-9_-]|$)' \
         "credential.jwt" "credential" "high" "likely"
-    scan_file_pattern "$file" '[A-Za-z][A-Za-z0-9+.-]{1,20}://[^[:space:]/:@]+:[^[:space:]@]+@' \
+    scan_file_pattern "$file" '[A-Za-z][A-Za-z0-9+.-]{1,20}://[^[:space:]/:@]+:[^[:space:]/:@]+@' \
         "credential.url-auth" "credential" "high" "likely"
     scan_file_pattern "$file" '(^|[^A-Za-z0-9])(AKIA|ASIA)[A-Z0-9]{16}([^A-Za-z0-9]|$)' \
         "credential.provider-key" "credential" "high" "likely"
@@ -147,7 +147,7 @@ scan_history() {
             "credential.authorization" "credential" "high" "likely"
         scan_history_pattern "$commit" '(^|[^[:alnum:]_])eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}([^A-Za-z0-9_-]|$)' \
             "credential.jwt" "credential" "high" "likely"
-        scan_history_pattern "$commit" '[A-Za-z][A-Za-z0-9+.-]{1,20}://[^[:space:]/:@]+:[^[:space:]@]+@' \
+        scan_history_pattern "$commit" '[A-Za-z][A-Za-z0-9+.-]{1,20}://[^[:space:]/:@]+:[^[:space:]/:@]+@' \
             "credential.url-auth" "credential" "high" "likely"
         scan_history_pattern "$commit" '(^|[^A-Za-z0-9])(AKIA|ASIA)[A-Z0-9]{16}([^A-Za-z0-9]|$)' \
             "credential.provider-key" "credential" "high" "likely"
