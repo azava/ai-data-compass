@@ -1,5 +1,7 @@
 # Report format
 
+Canonical report-format reference for the AI Data Compass security-audit skill.
+
 Reports are metadata-only. They must never contain matching lines, snippets, values, partial values, reversible fingerprints, or raw scanner errors.
 
 Each finding contains:

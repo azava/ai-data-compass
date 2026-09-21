@@ -1,10 +1,10 @@
-# Project Documentation
+# AI Data Compass Project Procedures
 
-Store project-specific documentation, rules, and constraints in this directory.
+This directory contains additional detail for the procedures referenced by
+`AGENTS.md`. The general rules remain in `AGENTS.md`; these documents should
+not duplicate them.
 
-AI coding agents must review the relevant files in `/docs` before starting work or making assumptions about the project.
-
-## Section Context Files
+## Procedure files
 
 - [Security and Privacy](security-and-privacy.md)
 - [Communication and Documentation](communication-and-documentation.md)

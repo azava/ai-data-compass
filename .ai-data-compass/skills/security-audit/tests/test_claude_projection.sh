@@ -6,8 +6,8 @@ set -euo pipefail
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 REPO_ROOT=$(cd "$SCRIPT_DIR/../../../.." && pwd)
 ADAPTER="$REPO_ROOT/.claude/skills/security-audit/SKILL.md"
-CANONICAL="$REPO_ROOT/.agents/skills/security-audit/SKILL.md"
-SCANNER="$REPO_ROOT/.agents/skills/security-audit/scripts/security-surface.sh"
+CANONICAL="$REPO_ROOT/.ai-data-compass/skills/security-audit/SKILL.md"
+SCANNER="$REPO_ROOT/.ai-data-compass/skills/security-audit/scripts/security-surface.sh"
 
 fail() {
     # Stop the test with a concise failure message.
@@ -29,8 +29,8 @@ assert_contains() {
 # Verify metadata and canonical source references.
 assert_contains "$ADAPTER" 'name: security-audit'
 assert_contains "$ADAPTER" 'description: Audit a repository for credential exposure in its working tree and Git history.'
-assert_contains "$ADAPTER" '.agents/skills/security-audit/SKILL.md'
-assert_contains "$ADAPTER" '.agents/skills/security-audit/scripts/security-surface.sh'
+assert_contains "$ADAPTER" '.ai-data-compass/skills/security-audit/SKILL.md'
+assert_contains "$ADAPTER" '.ai-data-compass/skills/security-audit/scripts/security-surface.sh'
 assert_contains "$CANONICAL" 'REPO_ROOT="$(git rev-parse --show-toplevel)"'
 
 printf '%s\n' 'Claude skill projection tests passed'
