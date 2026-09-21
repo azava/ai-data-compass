@@ -23,12 +23,12 @@ Read the relevant documentation before starting work or making project-specific
 assumptions:
 
 - [Central AI agent instructions](AGENTS.md)
-- [Documentation index](docs/README.md)
-- [Security and privacy](docs/security-and-privacy.md)
-- [Development patterns](docs/development-patterns.md)
-- [Testing guidance](docs/tests.md)
-- [Repository quality and metadata metrics](docs/repository-quality-and-metadata-metrics.md)
-- [Task completion checklist](docs/task-completion.md)
+- [Documentation index](.ai-data-compass/docs/README.md)
+- [Security and privacy](.ai-data-compass/docs/security-and-privacy.md)
+- [Development patterns](.ai-data-compass/docs/development-patterns.md)
+- [Testing guidance](.ai-data-compass/docs/tests.md)
+- [Repository quality and metadata metrics](.ai-data-compass/docs/repository-quality-and-metadata-metrics.md)
+- [Task completion checklist](.ai-data-compass/docs/task-completion.md)
 
 ## License
 
