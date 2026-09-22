@@ -32,22 +32,18 @@ assumptions:
 
 ## Installation
 
-The command-line tool is packaged as the `ai-data-compass` Python package for
-Python 3.9 and newer. Install it with pip in the target Python
-environment:
+The command-line tool is packaged as `ai-data-compass` and supports Python 3.9
+and newer. The package is not yet published to PyPI. From the repository root,
+install the local source with pip:
 
 ```bash
-python -m pip install ai-data-compass
+python -m pip install .
 ai-data-compass --version
 ```
 
-For a globally available CLI isolated from other Python environments, use
-pipx instead:
-
-```bash
-pipx install ai-data-compass
-ai-data-compass --version
-```
+For an isolated, globally available CLI, run `pipx install .` from the
+repository root. After a PyPI release, installation will use
+`python -m pip install ai-data-compass` or `pipx install ai-data-compass`.
 
 The CLI exposes `--version`, `init`, and `verify`. The base documentation is
 installed with every asset selection. Select everything, the agent

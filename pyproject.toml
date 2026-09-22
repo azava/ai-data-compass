@@ -32,57 +32,5 @@ ai-data-compass = "ai_data_compass.cli:main"
 [tool.setuptools.packages.find]
 where = ["src"]
 
-[tool.setuptools.data-files]
-"share/ai-data-compass/assets/.ai-data-compass/docs" = [
-  ".ai-data-compass/docs/README.md",
-  ".ai-data-compass/docs/ai-agent-skills.md",
-  ".ai-data-compass/docs/communication-and-documentation.md",
-  ".ai-data-compass/docs/development-patterns.md",
-  ".ai-data-compass/docs/distribution.md",
-  ".ai-data-compass/docs/project-documentation.md",
-  ".ai-data-compass/docs/repository-quality-and-metadata-metrics.md",
-  ".ai-data-compass/docs/scope-and-changes.md",
-  ".ai-data-compass/docs/security-and-privacy.md",
-  ".ai-data-compass/docs/task-completion.md",
-  ".ai-data-compass/docs/tests.md",
-]
-"share/ai-data-compass/assets" = [
-  "AGENTS.md",
-  "CLAUDE.md",
-  "GEMINI.md",
-  ".windsurfrules",
-]
-"share/ai-data-compass/assets/.ai-data-compass" = [
-  ".ai-data-compass/LICENSE",
-  ".ai-data-compass/THIRD-PARTY-NOTICES.md",
-]
-"share/ai-data-compass/assets/.github" = [
-  ".github/copilot-instructions.md",
-]
-"share/ai-data-compass/assets/.cursor/rules" = [
-  ".cursor/rules/agents.mdc",
-]
-"share/ai-data-compass/assets/.ai-data-compass/skills/security-audit" = [
-  ".ai-data-compass/skills/security-audit/SKILL.md",
-  ".ai-data-compass/skills/security-audit/LICENSE",
-  ".ai-data-compass/skills/security-audit/THIRD-PARTY-NOTICES.md",
-]
-"share/ai-data-compass/assets/.ai-data-compass/skills/security-audit/references" = [
-  ".ai-data-compass/skills/security-audit/references/detection-rules.md",
-  ".ai-data-compass/skills/security-audit/references/report-format.md",
-]
-"share/ai-data-compass/assets/.ai-data-compass/skills/security-audit/scripts" = [
-  ".ai-data-compass/skills/security-audit/scripts/security-surface.sh",
-]
-"share/ai-data-compass/assets/.ai-data-compass/skills/security-audit/tests" = [
-  ".ai-data-compass/skills/security-audit/tests/test_claude_projection.sh",
-  ".ai-data-compass/skills/security-audit/tests/test_codex_projection.sh",
-  ".ai-data-compass/skills/security-audit/tests/test_security_surface.sh",
-  ".ai-data-compass/skills/security-audit/tests/test_workflow_security_integration.sh",
-]
-"share/ai-data-compass/assets/.agents/skills/security-audit" = [
-  ".agents/skills/security-audit/SKILL.md",
-]
-"share/ai-data-compass/assets/.claude/skills/security-audit" = [
-  ".claude/skills/security-audit/SKILL.md",
-]
+[tool.setuptools.package-data]
+ai_data_compass = ["skill_catalog.json"]

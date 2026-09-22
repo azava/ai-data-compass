@@ -3,9 +3,14 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import List, Optional, Sequence
+from typing import Callable, List, Optional, Sequence, Union
 
-from .assets import install_assets, normalize_assets, planned_assets
+from .assets import (
+    InstallationResult,
+    install_assets,
+    normalize_assets,
+    plan_assets,
+)
 
 
 def initialize(
@@ -14,11 +19,12 @@ def initialize(
     *,
     dry_run: bool = False,
     asset_root: Optional[Path] = None,
-) -> List[Path]:
+    confirm_agents_adoption: Optional[Callable[[Path], bool]] = None,
+) -> Union[List[Path], InstallationResult]:
     """Prepare *target* for AI Data Compass assets.
 
-    This initial implementation targets clean repositories. Collision handling
-    and merge behavior are intentionally deferred to a later iteration.
+    Existing files with different content block only the affected asset. Files
+    with identical content are preserved, and missing files are installed.
     """
 
     target = target.resolve()
@@ -29,5 +35,8 @@ def initialize(
 
     selected = normalize_assets(asset_values)
     if dry_run:
-        return planned_assets(selected, root=asset_root)
-    return install_assets(target, selected, root=asset_root)
+        return plan_assets(target, selected, root=asset_root)
+    return install_assets(
+        target, selected, root=asset_root,
+        confirm_agents_adoption=confirm_agents_adoption,
+    )
