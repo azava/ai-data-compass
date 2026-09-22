@@ -10,7 +10,7 @@ implementation unit.
 
 ## Feature index
 
-1. Distribution and project bootstrap
+1. Distribution and project bootstrap (initial package and CLI implemented)
 2. Language- and technology-agnostic code-testing skill
 3. Data-quality and business-rule testing skill
 4. Project-specific quality-metrics skill
@@ -45,49 +45,20 @@ sensitive data in reports or logs.
 
 ## 1. Distribution and project bootstrap
 
-Create a supported way to distribute the reusable AI Data Compass assets to
-other data projects. Candidate interfaces include a package and a command such
-as `aidc init` or `ai-data start`; the final name and packaging model remain to
-be decided.
+The initial package and `ai-data-compass` CLI are implemented. The CLI supports
+`init` and `verify`, installs a mandatory base asset, and can add agent
+instructions or catalogued skills. It records installed files and their
+checksums in `.ai-data-compass/manifest.json`; license and third-party notice
+files are associated with the distributed assets. Installation handles the
+currently supported `AGENTS.md` and skill-name collisions with explicit
+consent or a generated skill suffix, respectively. See
+`.ai-data-compass/docs/distribution.md` for current behavior.
 
-The bootstrap must preserve the distinction between reusable assets and this
-repository's internal backlog and development material.
-
-### 1.1 Bootstrap for repositories without agent assets
-
-Support repositories that do not yet contain `AGENTS.md`, skills, agent
-configuration, or equivalent guidance artifacts.
-
-The operation should add the required assets using a documented, deterministic
-layout and should be safe to run repeatedly.
-
-### 1.2 Integration with repositories that already have agent assets
-
-Support repositories that already contain equivalent files, such as an
-existing `AGENTS.md`, skills, rules, or model-specific adapters.
-
-The integration must:
-
-- append or compose guidance without silently changing existing repository
-  rules;
-- preserve the adopting repository's existing behavior and ownership;
-- identify duplicate, contradictory, or overlapping rules;
-- provide a standard conflict-resolution procedure using an LLM where human
-  review is still required;
-- offer a command or check that reports unresolved conflicts before completion;
-- produce a deterministic result that can be reviewed in Git.
-
-This capability depends on the initial bootstrap and may require a dedicated
-skill for asset composition and conflict resolution.
-
-### 1.3 Licensing of distributed assets
-
-The bootstrap command or package must add the license and attribution notices
-needed for assets copied from AI Data Compass, so the assets can be adopted in
-corporate projects.
-
-The implementation must define how notices are added, updated, and associated
-with generated files.
+The remaining scope is advanced conflict resolution for overlapping or
+contradictory adopter guidance. The installer does not yet identify semantic
+overlap, propose LLM-assisted merges, or report unresolved policy conflicts.
+Those capabilities may require a dedicated asset-composition skill and a
+separate review command.
 
 ## 2. Language- and technology-agnostic code-testing skill
 
@@ -433,18 +404,19 @@ is incomplete or findings exceed configured limits.
 
 ## Cross-feature decisions still required
 
-The following decisions affect multiple features and should be recorded before
-implementation:
+The following open decisions affect multiple future features:
 
-- canonical package and command name (`aidc`, `ai-data`, or another choice);
-- asset manifest and versioning strategy;
-- merge and conflict-resolution format for existing project rules;
-- supported model and harness adapter contract;
-- default storage for metrics and Data Catalog configuration;
-- offline versus service-backed behavior for optional checks;
-- licensing and attribution format for generated assets;
-- policy for unknown, unclassified, or inaccessible data;
-- minimum validation required before an asset or skill is considered complete.
+- whether skills need independent versions in addition to package and manifest
+  versions;
+- how semantic conflicts between existing project rules should be represented,
+  reviewed, and checked for completion;
+- the compatibility matrix and projection contract for hosts beyond current
+  Codex and Claude skill support;
+- default storage and configuration interfaces for metrics and Data Catalog
+  metadata;
+- which optional checks may use external services and what authorization they
+  require;
+- the minimum validation gates for new reusable assets and skills.
 
 ## Maintenance
 

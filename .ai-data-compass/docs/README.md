@@ -6,6 +6,7 @@ not duplicate them.
 
 ## Procedure files
 
+- [Distribution](distribution.md)
 - [Security and Privacy](security-and-privacy.md)
 - [Communication and Documentation](communication-and-documentation.md)
 - [Development Patterns](development-patterns.md)

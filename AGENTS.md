@@ -1,6 +1,8 @@
 # Central AI Agent Instructions
 
-These instructions apply to every AI coding agent working in this repository.
+These AI Data Compass instructions apply to every AI coding agent working in
+this repository. Project-specific instructions take precedence when they
+conflict with guidance in this file.
 
 Follow the standards and procedures configured by this repository first.
 

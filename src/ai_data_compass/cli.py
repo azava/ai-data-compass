@@ -10,11 +10,17 @@ from typing import List, Optional
 
 from . import __version__
 from .assets import (
+    AGENT_ADAPTER_TARGETS,
     AGENTS_ASSET,
+    AGENTS_INSTRUCTIONS_PATH,
     ALL_SKILLS_ASSET,
     COMPLETE_ASSET,
     MANIFEST_RELATIVE_PATH,
     SKILL_ASSETS,
+    SKILL_DESCRIPTIONS,
+    agents_supplement_filename,
+    is_agents_supplement_filename,
+    InstallationResult,
     available_assets,
     validate_installation,
 )
@@ -88,10 +94,18 @@ def choose_assets() -> List[str]:
     print(_paint("AI Data Compass", "1;36"))
     print(_paint("Choose what to install in this repository:", "1"))
     print()
-    print(_paint(f"  {COMPLETE_ASSET:<13}", "1;32"), "Everything: agent instructions and all skills")
-    print(_paint(f"  {AGENTS_ASSET:<13}", "1;33"), "AGENTS.md and host adapters")
-    print(_paint(f"  security_audit", "1;33"), "Security audit skill and host adapters")
-    print(_paint(f"  {ALL_SKILLS_ASSET:<13}", "1;33"), "All available skills")
+    options = [
+        (COMPLETE_ASSET, "Everything: agent instructions and all skills", "1;32"),
+        (AGENTS_ASSET, f"{AGENTS_INSTRUCTIONS_PATH.name} and host adapters", "1;33"),
+        *[
+            (asset_name, SKILL_DESCRIPTIONS[asset_name], "1;33")
+            for asset_name in sorted(SKILL_ASSETS)
+        ],
+        (ALL_SKILLS_ASSET, "All available skills", "1;33"),
+    ]
+    label_width = max(len(name) for name, _, _ in options)
+    for name, description, color in options:
+        print(_paint(f"  {name:<{label_width}}", color), description)
     print()
     print(_paint("You can combine options with commas (for example: agents.md,security_audit).", "2"))
     answer = input(_paint("Assets [complete]: ", "1;36"))
@@ -100,7 +114,9 @@ def choose_assets() -> List[str]:
     return [answer]
 
 
-def _asset_group(relative_path: Path) -> str:
+def _asset_group(
+    relative_path: Path, skill_names: Optional[dict] = None
+) -> str:
     """Return the human-facing asset group for an installed file."""
 
     if relative_path == MANIFEST_RELATIVE_PATH:
@@ -112,41 +128,66 @@ def _asset_group(relative_path: Path) -> str:
         Path(".ai-data-compass") / "THIRD-PARTY-NOTICES.md",
     }:
         return "base"
-    if relative_path in {
-        Path("AGENTS.md"),
-        Path("CLAUDE.md"),
-        Path("GEMINI.md"),
-        Path(".cursor") / "rules" / "agents.mdc",
-        Path(".github") / "copilot-instructions.md",
-        Path(".windsurfrules"),
-    }:
+    if relative_path in AGENT_ADAPTER_TARGETS:
+        return AGENTS_ASSET
+    if is_agents_supplement_filename(relative_path.name):
         return AGENTS_ASSET
     for asset_name, directory_name in SKILL_ASSETS.items():
-        if relative_path.parts[:3] in {
-            (".ai-data-compass", "skills", directory_name),
-            (".agents", "skills", directory_name),
-            (".claude", "skills", directory_name),
-        }:
-            return asset_name
+        if (
+            len(relative_path.parts) > 2
+            and relative_path.parts[:2]
+            in {
+                (".ai-data-compass", "skills"),
+                (".agents", "skills"),
+                (".claude", "skills"),
+            }
+        ):
+            resolved_name = (skill_names or {}).get(asset_name, directory_name)
+            if relative_path.parts[2] == resolved_name:
+                return resolved_name if resolved_name != directory_name else asset_name
     return "other"
 
 
-def _print_installation_report(installed: List[Path], target: Path) -> None:
+def _print_installation_report(result: InstallationResult, target: Path) -> None:
     """Print every installed file grouped by the asset that provided it."""
 
     groups = {}
-    for path in installed:
-        groups.setdefault(_asset_group(path), []).append(path)
+    for path in result.installed:
+        groups.setdefault(_asset_group(path, result.skill_names), []).append(path)
 
-    print(_paint("Installation complete", "1;32"))
+    heading = (
+        "Installation completed with conflicts"
+        if result.has_conflicts
+        else "Installation complete"
+    )
+    print(_paint(heading, "1;33" if result.has_conflicts else "1;32"))
     print(_paint(f"Target: {target.resolve()}", "2"))
     print()
+    for outcome in result.outcomes:
+        if outcome.status == "already_installed":
+            print(f"{outcome.asset}: already installed; all files match the manifest.")
+        elif outcome.status == "identical":
+            print(
+                f"{outcome.asset}: files already exist with identical content; "
+                "no files were changed."
+            )
+        elif outcome.status == "conflict":
+            print(f"Cannot install asset '{outcome.asset}': {outcome.message or 'conflicting files exist.'}")
+            for path in outcome.conflicts:
+                print(f"  - {path}")
+        elif outcome.identical:
+            print(
+                f"{outcome.asset}: installed missing files; "
+                f"{len(outcome.identical)} existing files already matched."
+            )
+    if result.outcomes:
+        print()
     for group_name, paths in groups.items():
         print(_paint(f"{group_name} ({len(paths)} files)", "1;36"))
         for path in paths:
             print(f"  - {path}")
         print()
-    print(_paint(f"Total: {len(installed)} files installed.", "1;32"))
+    print(_paint(f"Total: {len(result.installed)} files installed.", "1;32"))
 
 
 def main(argv: Optional[List[str]] = None) -> int:
@@ -158,22 +199,39 @@ def main(argv: Optional[List[str]] = None) -> int:
     if args.command == "init":
         try:
             asset_values = [args.assets] if args.assets else choose_assets()
-            installed = initialize(
+            result = initialize(
                 args.target,
                 asset_values,
                 dry_run=args.dry_run,
+                confirm_agents_adoption=(
+                    None if args.dry_run else _confirm_agents_adoption
+                ),
             )
         except (EOFError, KeyboardInterrupt):
             parser.error("Asset selection cancelled")
-        except (FileNotFoundError, NotADirectoryError, ValueError) as error:
+        except (OSError, ValueError) as error:
             parser.error(str(error))
         if args.dry_run:
             print(_paint("Dry run: files that would be installed:", "1;36"))
-            for path in installed:
+            for outcome in result.outcomes:
+                if outcome.status == "would_install":
+                    print(f"Would install asset '{outcome.asset}'.")
+                elif outcome.status == "already_installed":
+                    print(f"{outcome.asset}: already installed; all files match the manifest.")
+                elif outcome.status == "identical":
+                    print(
+                        f"{outcome.asset}: files already exist with identical content; "
+                        "no files would be changed."
+                    )
+                elif outcome.status == "conflict":
+                    print(f"Cannot install asset '{outcome.asset}': {outcome.message or 'conflicting files exist.'}")
+                    for path in outcome.conflicts:
+                        print(f"  - {path}")
+            for path in result.installed:
                 print(f"- {path}")
         else:
-            _print_installation_report(installed, args.target)
-        return 0
+            _print_installation_report(result, args.target)
+        return 1 if result.has_conflicts else 0
 
     if args.command == "verify":
         errors = validate_installation(args.target)
@@ -184,6 +242,19 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     parser.print_help()
     return 0
+
+
+def _confirm_agents_adoption(path: Path) -> bool:
+    """Ask before appending the one-line AI Data Compass instruction."""
+
+    print(
+        f"An {AGENTS_INSTRUCTIONS_PATH.name} already exists at {path} with different content."
+    )
+    answer = input(
+        "Append a single-line instruction and install "
+        f"{agents_supplement_filename()} (or its available numeric suffix)? [y/N]: "
+    )
+    return answer.strip().lower() in {"y", "yes"}
 
 
 if __name__ == "__main__":

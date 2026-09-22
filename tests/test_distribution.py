@@ -1,5 +1,6 @@
 import ast
 import csv
+import json
 import os
 import re
 import shutil
@@ -28,17 +29,14 @@ class DistributionTests(unittest.TestCase):
                     self.assertTrue(target.is_file(), target)
 
     def test_repository_markdown_links_resolve(self) -> None:
-        documents = [REPOSITORY_ROOT / "README.md"]
-        documents.extend((REPOSITORY_ROOT / ".ai-data-compass" / "docs").glob("*.md"))
-        documents.extend(
-            [
-                REPOSITORY_ROOT / "AGENTS.md",
-                REPOSITORY_ROOT / "CLAUDE.md",
-                REPOSITORY_ROOT / "GEMINI.md",
-                REPOSITORY_ROOT / ".cursor" / "rules" / "agents.mdc",
-                REPOSITORY_ROOT / ".github" / "copilot-instructions.md",
-            ]
-        )
+        extensions = {".md", ".mdc", ".mdx", ".rst"}
+        documents = [
+            path
+            for path in REPOSITORY_ROOT.rglob("*")
+            if path.is_file()
+            and path.suffix.lower() in extensions
+            and ".git" not in path.parts
+        ]
         self._assert_markdown_links_resolve(REPOSITORY_ROOT, documents)
 
     def test_installed_documentation_links_resolve(self) -> None:
@@ -78,6 +76,9 @@ class DistributionTests(unittest.TestCase):
             REPOSITORY_ROOT / ".ai-data-compass" / "docs" / "distribution.md"
         ).read_text(encoding="utf-8")
         for content in (readme, distribution):
+            self.assertIn("python -m pip install .", content)
+            self.assertIn("pipx install .", content)
+            self.assertIn("not yet published to PyPI", content)
             self.assertIn("python -m pip install ai-data-compass", content)
             self.assertIn("pipx install ai-data-compass", content)
     def test_python_requirement_and_compatibility_metadata(self) -> None:
@@ -154,6 +155,7 @@ class DistributionTests(unittest.TestCase):
     def _copy_project(self, destination: Path) -> None:
         paths = [
             "pyproject.toml",
+            "setup.py",
             "README.md",
             "LICENSE",
             "AGENTS.md",
@@ -221,6 +223,24 @@ class DistributionTests(unittest.TestCase):
             project.mkdir()
             artifacts.mkdir()
             self._copy_project(project)
+            catalog_path = project / "src" / "ai_data_compass" / "skill_catalog.json"
+            catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
+            catalog.append(
+                {
+                    "asset": "demo_skill",
+                    "directory": "demo-skill",
+                    "description": "Demo skill and host adapters",
+                }
+            )
+            catalog_path.write_text(json.dumps(catalog), encoding="utf-8")
+            for relative in (
+                ".ai-data-compass/skills/demo-skill/SKILL.md",
+                ".agents/skills/demo-skill/SKILL.md",
+                ".claude/skills/demo-skill/SKILL.md",
+            ):
+                file_path = project / relative
+                file_path.parent.mkdir(parents=True, exist_ok=True)
+                file_path.write_text("# Demo skill\n", encoding="utf-8")
             self._build_artifacts(project, artifacts)
 
             wheel = next(artifacts.glob("*.whl"))
@@ -256,6 +276,18 @@ class DistributionTests(unittest.TestCase):
                         )
                         for name in names
                     )
+                )
+                self.assertTrue(
+                    any(
+                        name.endswith("assets/.ai-data-compass/skills/demo-skill/SKILL.md")
+                        for name in names
+                    )
+                )
+                self.assertTrue(
+                    any(name.endswith("assets/.agents/skills/demo-skill/SKILL.md") for name in names)
+                )
+                self.assertTrue(
+                    any(name.endswith("assets/.claude/skills/demo-skill/SKILL.md") for name in names)
                 )
                 self.assertTrue(
                     any(name.endswith("assets/.ai-data-compass/skills/security-audit/LICENSE") for name in names)
