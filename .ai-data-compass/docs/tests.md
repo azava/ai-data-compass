@@ -11,7 +11,7 @@ This document contains additional testing procedures for the rules in `AGENTS.md
 
 - Run the full Python suite from the repository root:
 
-`PYTHONPATH=src python -m unittest discover -s tests -v`
+`PYTHONPATH=src python -m unittest discover -s tests -q -b`
 
 - The GitHub Actions test workflow runs the suite on Python 3.9 through 3.13 for pull requests, pushes to `main`, and manual dispatches.
 
