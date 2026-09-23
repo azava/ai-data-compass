@@ -9,16 +9,288 @@ from pathlib import Path
 from unittest.mock import patch
 
 from ai_data_compass.assets import (
+    AGENT_ADAPTER_PATHS,
+    AGENT_ADAPTER_TARGETS,
+    AGENTS_SUPPLEMENT_STEM,
     _asset_files,
+    _selected_asset_files,
+    agents_supplement_filename,
+    is_agents_supplement_filename,
     install_assets,
     normalize_assets,
     planned_assets,
     validate_installation,
 )
-from ai_data_compass.cli import main
+from ai_data_compass.cli import _asset_group, choose_assets, main
 
 
 class CliTests(unittest.TestCase):
+    def test_adapter_paths_and_collision_names_share_the_registry(self) -> None:
+        source_root = Path(__file__).resolve().parents[1]
+        selected_paths = {
+            destination
+            for _, destination in _selected_asset_files(["agents.md"], source_root)
+        }
+        adapter_targets = set(AGENT_ADAPTER_PATHS)
+
+        self.assertEqual(AGENT_ADAPTER_TARGETS, adapter_targets)
+        self.assertEqual(adapter_targets, selected_paths)
+        for adapter_path in adapter_targets:
+            self.assertEqual("agents.md", _asset_group(adapter_path))
+
+        self.assertEqual(f"{AGENTS_SUPPLEMENT_STEM}.md", agents_supplement_filename())
+        self.assertEqual(
+            f"{AGENTS_SUPPLEMENT_STEM}-2.md", agents_supplement_filename(2)
+        )
+        self.assertTrue(is_agents_supplement_filename(agents_supplement_filename()))
+        self.assertTrue(is_agents_supplement_filename(agents_supplement_filename(2)))
+        self.assertFalse(is_agents_supplement_filename(f"{AGENTS_SUPPLEMENT_STEM}-1.md"))
+
+    def test_agents_collision_requires_consent_and_installs_supplement(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            existing_agents = target / "AGENTS.md"
+            existing_agents.write_text("Project rules take precedence.\n", encoding="utf-8")
+            for adapter in ["GEMINI.md", ".windsurfrules"]:
+                path = target / adapter
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("custom adapter", encoding="utf-8")
+            source_root = Path(__file__).resolve().parents[1]
+
+            declined = install_assets(target, ["agents.md"], root=source_root)
+
+            self.assertEqual("conflict", declined.outcomes[0].status)
+            self.assertEqual("Project rules take precedence.\n", existing_agents.read_text())
+            self.assertFalse((target / "AGENTS-ai-data-compass.md").exists())
+            self.assertFalse((target / "CLAUDE.md").exists())
+
+            accepted = install_assets(
+                target, ["agents.md"], root=source_root,
+                confirm_agents_adoption=lambda _: True,
+            )
+
+            self.assertEqual("installed", accepted.outcomes[0].status)
+            self.assertTrue((target / "AGENTS-ai-data-compass.md").is_file())
+            self.assertIn(
+                "[AGENTS-ai-data-compass.md](AGENTS-ai-data-compass.md)",
+                existing_agents.read_text(encoding="utf-8"),
+            )
+            instruction_lines = [
+                line for line in existing_agents.read_text(encoding="utf-8").splitlines()
+                if "Read and follow the AI Data Compass instructions" in line
+            ]
+            self.assertEqual(1, len(instruction_lines))
+            self.assertIn("@AGENTS-ai-data-compass.md", (target / "CLAUDE.md").read_text())
+            for document in [
+                "README.md", "ai-agent-skills.md", "tests.md", "security-and-privacy.md"
+            ]:
+                contents = (
+                    target / ".ai-data-compass" / "docs" / document
+                ).read_text(encoding="utf-8")
+                self.assertIn("AGENTS-ai-data-compass.md", contents, document)
+                self.assertNotIn("AGENTS.md", contents, document)
+            self.assertEqual("custom adapter", (target / "GEMINI.md").read_text())
+            self.assertEqual("custom adapter", (target / ".windsurfrules").read_text())
+            self.assertEqual([], validate_installation(target))
+            manifest = json.loads(
+                (target / ".ai-data-compass/manifest.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(
+                "AGENTS-ai-data-compass.md", manifest["agent_instructions_file"]
+            )
+
+            occupied_skill = target / ".ai-data-compass/skills/security-audit/SKILL.md"
+            occupied_skill.parent.mkdir(parents=True)
+            occupied_skill.write_text("adopter-owned skill", encoding="utf-8")
+            skill_result = install_assets(target, ["security_audit"], root=source_root)
+            self.assertEqual("installed", skill_result.outcomes[0].status)
+            combined_docs = (
+                target / ".ai-data-compass/docs/tests.md"
+            ).read_text(encoding="utf-8")
+            self.assertIn("AGENTS-ai-data-compass.md", combined_docs)
+            self.assertIn("security-audit-ai-data-compass", combined_docs)
+            self.assertNotIn("/skills/security-audit/", combined_docs)
+            self.assertEqual([], validate_installation(target))
+
+            repeated = install_assets(target, ["agents.md"], root=source_root)
+            self.assertEqual("already_installed", repeated.outcomes[0].status)
+            self.assertEqual(1, existing_agents.read_text().count("Read and follow the AI Data Compass"))
+            self.assertEqual([], validate_installation(target))
+
+    def test_cli_prompts_before_adopting_existing_agents(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            (target / "AGENTS.md").write_text("Local rules\n", encoding="utf-8")
+            with patch("builtins.input", return_value="y"):
+                result = main(["init", str(target), "--assets", "agents.md"])
+
+            self.assertEqual(0, result)
+            self.assertTrue((target / "AGENTS-ai-data-compass.md").is_file())
+
+    def test_cli_declining_agents_adoption_leaves_asset_uninstalled(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            agents = target / "AGENTS.md"
+            original = "Project instructions take precedence.\n"
+            agents.write_text(original, encoding="utf-8")
+
+            with patch("builtins.input", return_value="n"), patch("builtins.print"):
+                result = main(["init", str(target), "--assets", "agents.md"])
+
+            self.assertEqual(1, result)
+            self.assertEqual(original, agents.read_text(encoding="utf-8"))
+            self.assertFalse((target / "AGENTS-ai-data-compass.md").exists())
+            self.assertFalse((target / "CLAUDE.md").exists())
+            self.assertFalse((target / ".ai-data-compass/manifest.json").exists())
+
+    def test_cli_verifies_numbered_agents_supplement_installation(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            (target / "AGENTS.md").write_text("Local rules\n", encoding="utf-8")
+            occupied = target / agents_supplement_filename()
+            occupied.write_text("Adopter-owned file\n", encoding="utf-8")
+
+            with patch("builtins.input", return_value="y"), patch("builtins.print"):
+                install_result = main(["init", str(target), "--assets", "agents.md"])
+                verify_result = main(["verify", str(target)])
+
+            resolved = agents_supplement_filename(2)
+            self.assertEqual(0, install_result)
+            self.assertEqual(0, verify_result)
+            self.assertTrue((target / resolved).is_file())
+            self.assertEqual("Adopter-owned file\n", occupied.read_text(encoding="utf-8"))
+            self.assertIn(resolved, (target / "AGENTS.md").read_text(encoding="utf-8"))
+
+    def test_cli_verifies_skill_collision_installation(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            occupied = target / ".ai-data-compass/skills/security-audit/SKILL.md"
+            occupied.parent.mkdir(parents=True)
+            occupied.write_text("Adopter-owned skill\n", encoding="utf-8")
+
+            with patch("builtins.print"):
+                install_result = main(
+                    ["init", str(target), "--assets", "security_audit"]
+                )
+                verify_result = main(["verify", str(target)])
+
+            resolved = "security-audit-ai-data-compass"
+            self.assertEqual(0, install_result)
+            self.assertEqual(0, verify_result)
+            self.assertTrue(
+                (target / ".ai-data-compass/skills" / resolved / "SKILL.md").is_file()
+            )
+            self.assertEqual("Adopter-owned skill\n", occupied.read_text(encoding="utf-8"))
+
+    def test_agents_supplement_collision_uses_resolved_name_in_all_documents(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            (target / "AGENTS.md").write_text("Local rules\n", encoding="utf-8")
+            existing_supplement = target / "AGENTS-ai-data-compass.md"
+            existing_supplement.write_text("Adopter-owned file\n", encoding="utf-8")
+
+            result = install_assets(
+                target, ["agents.md"],
+                confirm_agents_adoption=lambda _: True,
+            )
+
+            resolved = "AGENTS-ai-data-compass-2.md"
+            self.assertEqual("installed", result.outcomes[0].status)
+            self.assertTrue((target / resolved).is_file())
+            self.assertEqual("Adopter-owned file\n", existing_supplement.read_text())
+            self.assertIn(f"[{resolved}]({resolved})", (target / "AGENTS.md").read_text())
+            self.assertIn(f"@{resolved}", (target / "CLAUDE.md").read_text())
+            for document in [
+                "README.md", "ai-agent-skills.md", "tests.md", "security-and-privacy.md"
+            ]:
+                content = (target / ".ai-data-compass/docs" / document).read_text()
+                self.assertIn(resolved, content)
+                self.assertNotIn("AGENTS.md", content)
+            self.assertEqual([], validate_installation(target))
+
+    def test_existing_claude_adapter_is_extended_without_losing_its_content(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            (target / "AGENTS.md").write_text("Local rules\n", encoding="utf-8")
+            claude = target / "CLAUDE.md"
+            claude.write_text("# Project Claude settings\nKeep this text.\n", encoding="utf-8")
+
+            result = install_assets(
+                target, ["agents.md"],
+                confirm_agents_adoption=lambda _: True,
+            )
+
+            self.assertEqual("installed", result.outcomes[0].status)
+            claude_text = claude.read_text(encoding="utf-8")
+            self.assertIn("Keep this text.", claude_text)
+            self.assertEqual(1, claude_text.count("@AGENTS-ai-data-compass.md"))
+            self.assertEqual([], validate_installation(target))
+
+    def test_agents_adoption_rolls_back_appends_and_new_files_on_commit_error(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            agents = target / "AGENTS.md"
+            original = b"Existing repository instructions.\n"
+            agents.write_bytes(original)
+            replace = os.replace
+
+            def fail_manifest(source: str, destination: str) -> None:
+                if Path(destination) == target / ".ai-data-compass/manifest.json":
+                    raise OSError("synthetic manifest commit failure")
+                replace(source, destination)
+
+            with patch("ai_data_compass.assets.os.replace", side_effect=fail_manifest):
+                with self.assertRaisesRegex(OSError, "synthetic manifest commit failure"):
+                    install_assets(
+                        target, ["agents.md"],
+                        confirm_agents_adoption=lambda _: True,
+                    )
+
+            self.assertEqual(original, agents.read_bytes())
+            self.assertFalse((target / "AGENTS-ai-data-compass.md").exists())
+            self.assertFalse((target / "CLAUDE.md").exists())
+            self.assertFalse((target / ".ai-data-compass/manifest.json").exists())
+
+    def test_interactive_asset_descriptions_are_column_aligned(self) -> None:
+        with patch("builtins.print") as print_mock, patch(
+            "builtins.input", return_value="agents.md"
+        ), patch.dict(os.environ, {"NO_COLOR": "1"}):
+            selected = choose_assets()
+
+        self.assertEqual(["agents.md"], selected)
+        expected_descriptions = {
+            "Everything: agent instructions and all skills",
+            "AGENTS.md and host adapters",
+            "Security audit skill and host adapters",
+            "All available skills",
+        }
+        option_calls = [
+            call.args
+            for call in print_mock.call_args_list
+            if len(call.args) == 2 and call.args[1] in expected_descriptions
+        ]
+        self.assertEqual(4, len(option_calls))
+        self.assertEqual(1, len({len(label) for label, _ in option_calls}))
+
+    def test_interactive_menu_reads_skill_options_from_catalog_registry(self) -> None:
+        with patch("ai_data_compass.cli.SKILL_ASSETS", {"demo_skill": "demo-skill"}), patch(
+            "ai_data_compass.cli.SKILL_DESCRIPTIONS",
+            {"demo_skill": "Demo skill and host adapters"},
+        ), patch("builtins.print") as print_mock, patch(
+            "builtins.input", return_value="demo_skill"
+        ), patch.dict(os.environ, {"NO_COLOR": "1"}):
+            selected = choose_assets()
+
+        self.assertEqual(["demo_skill"], selected)
+        self.assertTrue(
+            any(
+                len(call.args) == 2
+                and call.args[0].strip() == "demo_skill"
+                and call.args[1] == "Demo skill and host adapters"
+                for call in print_mock.call_args_list
+            )
+        )
+
     def test_version(self) -> None:
         with self.assertRaises(SystemExit) as result:
             main(["--version"])
@@ -39,6 +311,7 @@ class CliTests(unittest.TestCase):
 
             self.assertEqual(exit_code, 0)
             self.assertTrue((target / "AGENTS.md").is_file())
+            self.assertFalse((target / "AGENTS-ai-data-compass.md").exists())
             for adapter in [
                 "CLAUDE.md",
                 "GEMINI.md",
@@ -113,6 +386,28 @@ class CliTests(unittest.TestCase):
             self.assertIn("  - .ai-data-compass/manifest.json", output)
             self.assertIn("Total: 32 files installed.", output)
 
+    def test_installation_report_uses_resolved_skill_name_for_collisions(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            occupied = target / ".ai-data-compass/skills/security-audit/SKILL.md"
+            occupied.parent.mkdir(parents=True)
+            occupied.write_text("adopter-owned skill", encoding="utf-8")
+
+            with patch("builtins.print") as print_mock, patch.dict(
+                os.environ, {"NO_COLOR": "1"}
+            ):
+                exit_code = main(
+                    ["init", str(target), "--assets", "security_audit"]
+                )
+
+            output = "\n".join(
+                " ".join(str(argument) for argument in call.args)
+                for call in print_mock.call_args_list
+            )
+            self.assertEqual(0, exit_code)
+            self.assertIn("security-audit-ai-data-compass (12 files)", output)
+            self.assertNotIn("other (12 files)", output)
+
     def test_init_accepts_all_skills_alias(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             target = Path(directory)
@@ -172,6 +467,210 @@ class CliTests(unittest.TestCase):
             self.assertTrue(
                 (target / ".ai-data-compass" / "skills" / "security-audit" / "SKILL.md").is_file()
             )
+
+    def test_reinstall_reports_asset_as_already_installed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            source_root = Path(__file__).resolve().parents[1]
+            install_assets(target, ["security_audit"], root=source_root)
+
+            result = install_assets(target, ["security_audit"], root=source_root)
+
+            self.assertEqual(["already_installed"], [item.status for item in result.outcomes])
+            self.assertEqual([], result.installed)
+            self.assertEqual([], validate_installation(target))
+
+    def test_install_fills_missing_files_when_existing_content_matches(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            source_root = Path(__file__).resolve().parents[1]
+            source = source_root / ".ai-data-compass" / "docs" / "README.md"
+            destination = target / ".ai-data-compass" / "docs" / "README.md"
+            destination.parent.mkdir(parents=True)
+            destination.write_bytes(source.read_bytes())
+
+            result = install_assets(target, ["security_audit"], root=source_root)
+
+            self.assertEqual("installed", result.outcomes[0].status)
+            self.assertIn(Path(".ai-data-compass/docs/README.md"), result.outcomes[0].identical)
+            self.assertTrue(
+                (target / ".ai-data-compass" / "skills" / "security-audit" / "SKILL.md").is_file()
+            )
+            self.assertEqual([], validate_installation(target))
+
+    def test_identical_unregistered_asset_is_not_claimed_as_installed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            source_root = Path(__file__).resolve().parents[1]
+            for source, relative in _asset_files(["security_audit"], source_root):
+                destination = target / relative
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                destination.write_bytes(source.read_bytes())
+
+            result = install_assets(target, ["security_audit"], root=source_root)
+
+            self.assertEqual("identical", result.outcomes[0].status)
+            self.assertEqual([], result.installed)
+            self.assertFalse((target / ".ai-data-compass" / "manifest.json").exists())
+
+    def test_conflict_blocks_only_affected_asset(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            source_root = Path(__file__).resolve().parents[1]
+            (target / "AGENTS.md").write_text("adopter-owned", encoding="utf-8")
+
+            result = install_assets(
+                target,
+                ["agents.md", "security_audit"],
+                root=source_root,
+            )
+
+            self.assertEqual(
+                ["conflict", "installed"],
+                [item.status for item in result.outcomes],
+            )
+            self.assertEqual("adopter-owned", (target / "AGENTS.md").read_text(encoding="utf-8"))
+            self.assertTrue(
+                (target / ".ai-data-compass" / "skills" / "security-audit" / "SKILL.md").is_file()
+            )
+            manifest = json.loads(
+                (target / ".ai-data-compass" / "manifest.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(["base", "security_audit"], manifest["assets"])
+
+    def test_skill_name_collision_renders_markdown_without_changing_sources(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            source_root = Path(__file__).resolve().parents[1]
+            occupied = target / ".ai-data-compass/skills/security-audit/SKILL.md"
+            occupied.parent.mkdir(parents=True)
+            occupied.write_text("adopter-owned skill", encoding="utf-8")
+            source_doc = source_root / ".ai-data-compass/docs/tests.md"
+            original_doc = source_doc.read_bytes()
+
+            result = install_assets(target, ["security_audit"], root=source_root)
+
+            resolved_name = "security-audit-ai-data-compass"
+            installed_skill = (
+                target / ".ai-data-compass/skills" / resolved_name / "SKILL.md"
+            )
+            self.assertEqual("installed", result.outcomes[0].status)
+            self.assertTrue(installed_skill.is_file())
+            self.assertEqual("adopter-owned skill", occupied.read_text(encoding="utf-8"))
+            self.assertIn(
+                f"name: {resolved_name}", installed_skill.read_text(encoding="utf-8")
+            )
+            self.assertIn(
+                f".ai-data-compass/skills/{resolved_name}/",
+                (target / ".agents/skills" / resolved_name / "SKILL.md").read_text(
+                    encoding="utf-8"
+                ),
+            )
+            rendered_doc = (target / ".ai-data-compass/docs/tests.md").read_text(
+                encoding="utf-8"
+            )
+            self.assertIn(f".ai-data-compass/skills/{resolved_name}/", rendered_doc)
+            for markdown in target.rglob("*.md"):
+                content = markdown.read_text(encoding="utf-8")
+                for stale_directory in [
+                    "/skills/security-audit/",
+                    "/security-audit/",
+                ]:
+                    self.assertNotIn(stale_directory, content, markdown.relative_to(target))
+            self.assertIn(
+                "security_audit",
+                (target / ".ai-data-compass/docs/distribution.md").read_text(
+                    encoding="utf-8"
+                ),
+            )
+            self.assertEqual(original_doc, source_doc.read_bytes())
+
+            manifest = json.loads(
+                (target / ".ai-data-compass/manifest.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(
+                resolved_name, manifest["skill_names"]["security_audit"]
+            )
+            self.assertEqual([], validate_installation(target))
+
+    def test_skill_collision_reuses_manifest_name_and_updates_managed_docs(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            source_root = Path(__file__).resolve().parents[1]
+            install_assets(target, ["agents.md"], root=source_root)
+            existing_doc = target / ".ai-data-compass/docs/tests.md"
+            canonical_path = target / ".ai-data-compass/skills/security-audit/SKILL.md"
+            canonical_path.parent.mkdir(parents=True)
+            canonical_path.write_text("adopter-owned skill", encoding="utf-8")
+
+            first = install_assets(target, ["security_audit"], root=source_root)
+            resolved_name = "security-audit-ai-data-compass"
+            rendered_doc = existing_doc.read_text(encoding="utf-8")
+            self.assertIn(resolved_name, rendered_doc)
+            self.assertEqual("installed", first.outcomes[0].status)
+
+            second = install_assets(target, ["security_audit"], root=source_root)
+
+            self.assertEqual("already_installed", second.outcomes[0].status)
+            self.assertEqual(resolved_name, json.loads(
+                (target / ".ai-data-compass/manifest.json").read_text(encoding="utf-8")
+            )["skill_names"]["security_audit"])
+            self.assertEqual([], validate_installation(target))
+
+    def test_skill_collision_does_not_overwrite_adopter_modified_docs(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            source_root = Path(__file__).resolve().parents[1]
+            install_assets(target, ["agents.md"], root=source_root)
+            doc = target / ".ai-data-compass/docs/ai-agent-skills.md"
+            doc.write_text("adopter-modified documentation", encoding="utf-8")
+            occupied = target / ".ai-data-compass/skills/security-audit/SKILL.md"
+            occupied.parent.mkdir(parents=True)
+            occupied.write_text("adopter-owned skill", encoding="utf-8")
+
+            result = install_assets(target, ["security_audit"], root=source_root)
+
+            self.assertEqual("conflict", result.outcomes[0].status)
+            self.assertEqual("adopter-modified documentation", doc.read_text(encoding="utf-8"))
+            self.assertFalse(
+                (target / ".ai-data-compass/skills/security-audit-ai-data-compass").exists()
+            )
+            self.assertFalse((target / ".agents/skills/security-audit-ai-data-compass").exists())
+
+    def test_skill_collision_rolls_back_rendered_docs_if_manifest_commit_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            source_root = Path(__file__).resolve().parents[1]
+            install_assets(target, ["agents.md"], root=source_root)
+            docs = target / ".ai-data-compass/docs"
+            original_docs = {
+                path.relative_to(target): path.read_bytes()
+                for path in docs.glob("*.md")
+            }
+            occupied = target / ".ai-data-compass/skills/security-audit/SKILL.md"
+            occupied.parent.mkdir(parents=True)
+            occupied.write_text("adopter-owned skill", encoding="utf-8")
+            real_replace = os.replace
+
+            def fail_manifest_replace(source: str, destination: str) -> None:
+                if Path(destination) == target / ".ai-data-compass/manifest.json":
+                    raise OSError("synthetic manifest commit failure")
+                real_replace(source, destination)
+
+            with patch(
+                "ai_data_compass.assets.os.replace", side_effect=fail_manifest_replace
+            ):
+                with self.assertRaisesRegex(OSError, "synthetic manifest commit failure"):
+                    install_assets(target, ["security_audit"], root=source_root)
+
+            self.assertEqual(
+                original_docs,
+                {path.relative_to(target): path.read_bytes() for path in docs.glob("*.md")},
+            )
+            self.assertFalse(
+                (target / ".ai-data-compass/skills/security-audit-ai-data-compass").exists()
+            )
+            self.assertEqual("adopter-owned skill", occupied.read_text(encoding="utf-8"))
 
     def test_init_combines_agents_and_all_skills_in_manifest(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -339,13 +838,14 @@ class CliTests(unittest.TestCase):
             external.mkdir()
             (target / ".ai-data-compass").symlink_to(external, target_is_directory=True)
 
-            with self.assertRaises(ValueError):
-                install_assets(
-                    target,
-                    ["agents.md"],
-                    root=Path(__file__).resolve().parents[1],
-                )
+            result = install_assets(
+                target,
+                ["agents.md"],
+                root=Path(__file__).resolve().parents[1],
+            )
 
+            self.assertEqual("conflict", result.outcomes[0].status)
+            self.assertIn(Path(".ai-data-compass/LICENSE"), result.outcomes[0].conflicts)
             self.assertEqual([], list(external.iterdir()))
 
     def test_installation_rejects_symlinked_lock_file(self) -> None:
@@ -589,6 +1089,7 @@ class CliTests(unittest.TestCase):
 
             output = [str(call.args[0]) for call in print_mock.call_args_list]
             expected = ["Dry run: files that would be installed:"]
+            expected.append("Would install asset 'security_audit'.")
             expected.extend(
                 f"- {path}"
                 for path in planned_assets(
@@ -597,6 +1098,23 @@ class CliTests(unittest.TestCase):
                 )
             )
             self.assertEqual(expected, output)
+
+    def test_dry_run_reports_conflicts_without_changing_the_target(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            existing = target / "AGENTS.md"
+            existing.write_text("adopter-owned", encoding="utf-8")
+            with patch("builtins.print") as print_mock:
+                exit_code = main(
+                    ["init", str(target), "--assets", "agents.md", "--dry-run"]
+                )
+
+            output = "\n".join(str(call.args[0]) for call in print_mock.call_args_list)
+            self.assertEqual(1, exit_code)
+            self.assertIn("Cannot install asset 'agents.md'", output)
+            self.assertIn("AGENTS.md", output)
+            self.assertEqual([existing], list(target.iterdir()))
+            self.assertEqual("adopter-owned", existing.read_text(encoding="utf-8"))
 
     def test_interactive_installer_rejects_invalid_selection(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

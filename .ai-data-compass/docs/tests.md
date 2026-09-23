@@ -22,6 +22,7 @@ This document contains additional testing procedures for the rules in
 - `bash .ai-data-compass/skills/security-audit/tests/test_codex_projection.sh`
 - `bash .ai-data-compass/skills/security-audit/tests/test_workflow_security_integration.sh`
 
-The security audit runs in a separate workflow. For pull requests, it loads
-the scanner from the trusted base revision and scans the proposed revision;
-the test workflow intentionally executes the proposed revision's code.
+Repository credential scans run in a separate workflow. For pull requests,
+that workflow loads the scanner from the trusted base revision and scans the
+proposed revision. Security skill regression tests also run in the standard
+test workflow, which intentionally executes the proposed revision's code.
