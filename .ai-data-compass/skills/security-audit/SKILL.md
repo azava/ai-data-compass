@@ -1,6 +1,5 @@
 ---
-name: security-audit
-description: Audit a repository for credential exposure in its working tree and Git history.
+name: security-audit description: Audit a repository for credential exposure in its working tree and Git history.
 ---
 
 # Security Audit
@@ -36,9 +35,6 @@ bash "$REPO_ROOT/.ai-data-compass/skills/security-audit/scripts/security-surface
 
 ## Optional failure mode
 
-Use `--fail-on-findings` when a caller must fail if credential candidates are
-detected. Without this option, findings are reported and the scanner returns
-zero. The scanner returns `1` for findings in this opt-in mode, `2` for scan
-errors, and `3` when the finding limit truncates the report.
+Use `--fail-on-findings` when a caller must fail if credential candidates are detected. Without this option, findings are reported and the scanner returns zero. The scanner returns `1` for findings in this opt-in mode, `2` for scan errors, and `3` when the finding limit truncates the report.
 
 This first version covers credential candidates and sensitive-looking filenames. It does not confirm active credentials, classify free-form PII/PHI, scan binary contents, or contact external providers.

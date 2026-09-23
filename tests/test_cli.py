@@ -1,5 +1,6 @@
-import json
+import errno
 import hashlib
+import json
 import os
 import tempfile
 import threading
@@ -232,14 +233,14 @@ class CliTests(unittest.TestCase):
             agents = target / "AGENTS.md"
             original = b"Existing repository instructions.\n"
             agents.write_bytes(original)
-            replace = os.replace
+            link = os.link
 
-            def fail_manifest(source: str, destination: str) -> None:
+            def fail_manifest(source: str, destination: str, **kwargs) -> None:
                 if Path(destination) == target / ".ai-data-compass/manifest.json":
                     raise OSError("synthetic manifest commit failure")
-                replace(source, destination)
+                link(source, destination, **kwargs)
 
-            with patch("ai_data_compass.assets.os.replace", side_effect=fail_manifest):
+            with patch("ai_data_compass.assets.os.link", side_effect=fail_manifest):
                 with self.assertRaisesRegex(OSError, "synthetic manifest commit failure"):
                     install_assets(
                         target, ["agents.md"],
@@ -480,6 +481,179 @@ class CliTests(unittest.TestCase):
             self.assertEqual([], result.installed)
             self.assertEqual([], validate_installation(target))
 
+    def test_install_upgrades_manifest_from_an_older_package_version(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            source_root = Path(__file__).resolve().parents[1]
+            install_assets(target, ["security_audit"], root=source_root)
+
+            with patch("ai_data_compass.assets.__version__", "0.0.2"):
+                result = install_assets(target, ["agents.md"], root=source_root)
+                manifest = json.loads(
+                    (target / ".ai-data-compass/manifest.json").read_text(encoding="utf-8")
+                )
+                errors = validate_installation(target)
+
+            self.assertEqual("installed", result.outcomes[0].status)
+            self.assertEqual("0.0.2", manifest["version"])
+            self.assertIn("security_audit", manifest["assets"])
+            self.assertEqual([], errors)
+
+    def test_init_updates_manifest_version_when_assets_are_already_current(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            source_root = Path(__file__).resolve().parents[1]
+            install_assets(target, ["security_audit"], root=source_root)
+
+            with patch("ai_data_compass.assets.__version__", "0.0.2"):
+                result = install_assets(target, ["security_audit"], root=source_root)
+                manifest = json.loads(
+                    (target / ".ai-data-compass/manifest.json").read_text(encoding="utf-8")
+                )
+
+            self.assertEqual("installed", result.outcomes[0].status)
+            self.assertEqual([Path(".ai-data-compass/manifest.json")], result.installed)
+            self.assertEqual("0.0.2", manifest["version"])
+
+    def test_identical_script_with_wrong_executable_mode_is_a_conflict(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            source_root = Path(__file__).resolve().parents[1]
+            source = (
+                source_root
+                / ".ai-data-compass/skills/security-audit/scripts/security-surface.sh"
+            )
+            destination = (
+                target
+                / ".ai-data-compass/skills/security-audit/scripts/security-surface.sh"
+            )
+            destination.parent.mkdir(parents=True)
+            destination.write_bytes(source.read_bytes())
+            destination.chmod(0o644)
+
+            result = install_assets(target, ["security_audit"], root=source_root)
+
+            self.assertEqual("conflict", result.outcomes[0].status)
+            self.assertIn(Path(".ai-data-compass/skills/security-audit/scripts/security-surface.sh"),
+                          result.outcomes[0].conflicts)
+            self.assertFalse(destination.stat().st_mode & 0o111)
+            self.assertFalse((target / ".ai-data-compass/manifest.json").exists())
+
+    def test_reinstall_repairs_executable_mode_of_a_registered_script(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            source_root = Path(__file__).resolve().parents[1]
+            install_assets(target, ["security_audit"], root=source_root)
+            script = (
+                target
+                / ".ai-data-compass/skills/security-audit/scripts/security-surface.sh"
+            )
+            script.chmod(0o644)
+
+            result = install_assets(target, ["security_audit"], root=source_root)
+
+            self.assertEqual("installed", result.outcomes[0].status)
+            self.assertTrue(script.stat().st_mode & 0o111)
+            self.assertEqual([], validate_installation(target))
+
+    def test_install_aborts_and_preserves_concurrent_document_edit(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            source_root = Path(__file__).resolve().parents[1]
+            install_assets(target, ["agents.md"], root=source_root)
+            document = target / ".ai-data-compass/docs/tests.md"
+            original_manifest = (target / ".ai-data-compass/manifest.json").read_bytes()
+            occupied = target / ".ai-data-compass/skills/security-audit/SKILL.md"
+            occupied.parent.mkdir(parents=True)
+            occupied.write_text("adopter-owned skill", encoding="utf-8")
+            real_replace = os.replace
+            changed = []
+
+            def edit_before_backup(source: str, destination: str) -> None:
+                if Path(source) == document and not changed:
+                    document.write_bytes(document.read_bytes() + b"\nconcurrent edit\n")
+                    changed.append(True)
+                real_replace(source, destination)
+
+            with patch("ai_data_compass.assets.os.replace", side_effect=edit_before_backup):
+                with self.assertRaisesRegex(FileExistsError, "changed during installation"):
+                    install_assets(target, ["security_audit"], root=source_root)
+
+            self.assertEqual([True], changed)
+            self.assertIn(b"concurrent edit", document.read_bytes())
+            self.assertEqual(
+                original_manifest,
+                (target / ".ai-data-compass/manifest.json").read_bytes(),
+            )
+            self.assertEqual("adopter-owned skill", occupied.read_text(encoding="utf-8"))
+
+    def test_install_does_not_replace_a_file_created_during_commit(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            source_root = Path(__file__).resolve().parents[1]
+            concurrent_file = target / ".ai-data-compass/docs/README.md"
+            real_link = os.link
+            created = []
+
+            def create_before_link(source: str, destination: str, **kwargs) -> None:
+                if Path(destination) == concurrent_file and not created:
+                    concurrent_file.write_text("concurrent owner", encoding="utf-8")
+                    created.append(True)
+                real_link(source, destination, **kwargs)
+
+            with patch("ai_data_compass.assets.os.link", side_effect=create_before_link):
+                with self.assertRaisesRegex(FileExistsError, "changed during installation"):
+                    install_assets(target, ["security_audit"], root=source_root)
+
+            self.assertEqual([True], created)
+            self.assertEqual("concurrent owner", concurrent_file.read_text(encoding="utf-8"))
+            self.assertFalse((target / ".ai-data-compass/manifest.json").exists())
+
+    def test_install_handles_cross_device_staging_without_replacing_destinations(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            source_root = Path(__file__).resolve().parents[1]
+            real_link = os.link
+            forced_cross_device = []
+
+            def link_with_one_cross_device_error(source: str, destination: str, **kwargs) -> None:
+                if not forced_cross_device:
+                    forced_cross_device.append(True)
+                    raise OSError(errno.EXDEV, "synthetic cross-device link")
+                real_link(source, destination, **kwargs)
+
+            with patch(
+                "ai_data_compass.assets.os.link",
+                side_effect=link_with_one_cross_device_error,
+            ):
+                result = install_assets(target, ["security_audit"], root=source_root)
+
+            self.assertEqual("installed", result.outcomes[0].status)
+            self.assertTrue(forced_cross_device)
+            self.assertEqual([], validate_installation(target))
+
+    def test_malformed_manifest_source_is_reported_as_conflict(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            source_root = Path(__file__).resolve().parents[1]
+            install_assets(target, ["security_audit"], root=source_root)
+            manifest_path = target / ".ai-data-compass/manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["files"][0]["source"] = None
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            malformed_manifest = manifest_path.read_bytes()
+            validation_errors = validate_installation(target)
+
+            result = install_assets(target, ["agents.md"], root=source_root)
+
+            self.assertTrue(
+                any("invalid source path" in error for error in validation_errors)
+            )
+            self.assertEqual("conflict", result.outcomes[0].status)
+            self.assertIn(Path(".ai-data-compass/manifest.json"), result.outcomes[0].conflicts)
+            self.assertEqual(malformed_manifest, manifest_path.read_bytes())
+            self.assertFalse((target / "AGENTS.md").exists())
+
     def test_install_fills_missing_files_when_existing_content_matches(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             target = Path(directory)
@@ -506,6 +680,7 @@ class CliTests(unittest.TestCase):
                 destination = target / relative
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 destination.write_bytes(source.read_bytes())
+                destination.chmod(source.stat().st_mode)
 
             result = install_assets(target, ["security_audit"], root=source_root)
 
@@ -650,15 +825,20 @@ class CliTests(unittest.TestCase):
             occupied = target / ".ai-data-compass/skills/security-audit/SKILL.md"
             occupied.parent.mkdir(parents=True)
             occupied.write_text("adopter-owned skill", encoding="utf-8")
-            real_replace = os.replace
+            real_link = os.link
+            failed_manifest_link = []
 
-            def fail_manifest_replace(source: str, destination: str) -> None:
-                if Path(destination) == target / ".ai-data-compass/manifest.json":
+            def fail_manifest_replace(source: str, destination: str, **kwargs) -> None:
+                if (
+                    Path(destination) == target / ".ai-data-compass/manifest.json"
+                    and not failed_manifest_link
+                ):
+                    failed_manifest_link.append(True)
                     raise OSError("synthetic manifest commit failure")
-                real_replace(source, destination)
+                real_link(source, destination, **kwargs)
 
             with patch(
-                "ai_data_compass.assets.os.replace", side_effect=fail_manifest_replace
+                "ai_data_compass.assets.os.link", side_effect=fail_manifest_replace
             ):
                 with self.assertRaisesRegex(OSError, "synthetic manifest commit failure"):
                     install_assets(target, ["security_audit"], root=source_root)
@@ -933,16 +1113,16 @@ class CliTests(unittest.TestCase):
     def test_installation_rolls_back_when_commit_fails(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             target = Path(directory)
-            real_replace = os.replace
+            real_link = os.link
             calls = {"count": 0}
 
-            def fail_on_second_move(source: str, destination: str) -> None:
+            def fail_on_second_link(source: str, destination: str, **kwargs) -> None:
                 calls["count"] += 1
                 if calls["count"] == 2:
                     raise OSError("synthetic commit failure")
-                real_replace(source, destination)
+                real_link(source, destination, **kwargs)
 
-            with patch("ai_data_compass.assets.os.replace", side_effect=fail_on_second_move):
+            with patch("ai_data_compass.assets.os.link", side_effect=fail_on_second_link):
                 with self.assertRaises(OSError):
                     install_assets(
                         target,
@@ -982,7 +1162,7 @@ class CliTests(unittest.TestCase):
         mutations = [
             ("format", 99, "Unsupported manifest format"),
             ("package", "other-package", "Manifest package does not match"),
-            ("version", "99.0.0", "Manifest version does not match"),
+            ("version", None, "Manifest version is invalid"),
             ("assets", ["base", "unknown"], "Manifest contains an unknown asset"),
             ("assets", ["base", "complete"], "Manifest contains an unknown asset"),
             ("assets", ["base", "security_audit", "security_audit"], "duplicate assets"),
@@ -1005,6 +1185,7 @@ class CliTests(unittest.TestCase):
             ("path", "../outside", "Manifest path escapes target"),
             ("license_asset", "unknown", "Unknown license asset"),
             ("license_asset", "security_audit", "License asset does not match file path"),
+            ("license_asset", [], "Unknown license asset"),
         ]
         for field, value, expected_error in mutations:
             with self.subTest(field=field):

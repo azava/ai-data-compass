@@ -9,5 +9,4 @@ Read and follow the canonical skill:
 
 `../../../.ai-data-compass/skills/security-audit/SKILL.md`
 
-Resolve all scripts, references, tests, and assets relative to the canonical
-skill directory. Do not duplicate or reinterpret its workflow.
+Resolve all scripts, references, tests, and assets relative to the canonical skill directory. Do not duplicate or reinterpret its workflow.
