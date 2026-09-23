@@ -1,6 +1,5 @@
 ---
-name: security-audit
-description: Audit a repository for credential exposure in its working tree and Git history.
+name: security-audit description: Audit a repository for credential exposure in its working tree and Git history.
 ---
 
 # Security Audit

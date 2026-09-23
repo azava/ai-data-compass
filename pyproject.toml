@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -8,15 +8,16 @@ version = "0.0.1"
 description = "A repository-level foundation for AI-assisted data work"
 readme = "README.md"
 requires-python = ">=3.9"
-license = { file = "LICENSE" }
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [
   { name = "Alex Zava" },
 ]
+
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Environment :: Console",
   "Intended Audience :: Developers",
-  "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
   "Programming Language :: Python :: 3.9",
@@ -25,6 +26,10 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
 ]
+
+[project.urls]
+Repository = "https://github.com/azava/ai-data-compass"
+Documentation = "https://github.com/azava/ai-data-compass/blob/main/.ai-data-compass/docs/README.md"
 
 [project.scripts]
 ai-data-compass = "ai_data_compass.cli:main"

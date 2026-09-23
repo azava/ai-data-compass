@@ -1,8 +1,6 @@
 # AI Data Compass Project Procedures
 
-This directory contains additional detail for the procedures referenced by
-`AGENTS.md`. The general rules remain in `AGENTS.md`; these documents should
-not duplicate them.
+This directory contains additional detail for the procedures referenced by `AGENTS.md`. The general rules remain in `AGENTS.md`; these documents should not duplicate them.
 
 ## Procedure files
 

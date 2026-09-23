@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-import json
+import errno
 import hashlib
+import json
 import os
 import re
 import shutil
@@ -400,6 +401,93 @@ def _file_metadata(path: Path, contents: Optional[bytes] = None) -> Dict[str, ob
     }
 
 
+def _file_snapshot(path: Path) -> Dict[str, object]:
+    """Capture content and filesystem identity for optimistic commit checks."""
+
+    before = path.stat()
+    metadata = _file_metadata(path)
+    after = path.stat()
+    snapshot = {
+        **metadata,
+        "device": after.st_dev,
+        "inode": after.st_ino,
+        "mtime_ns": after.st_mtime_ns,
+        "ctime_ns": after.st_ctime_ns,
+    }
+    if (before.st_dev, before.st_ino, before.st_size, before.st_mtime_ns) != (
+        after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns
+    ):
+        raise FileExistsError(f"Asset destination changed while being inspected: {path}")
+    return snapshot
+
+
+def _safe_manifest_path(value: object) -> bool:
+    """Return whether a manifest path is a normalized, relative POSIX path."""
+
+    if not isinstance(value, str) or not value or "\\" in value or "\0" in value:
+        return False
+    path = Path(value)
+    return (
+        not path.is_absolute()
+        and bool(path.parts)
+        and path.as_posix() == value
+        and ".." not in path.parts
+        and not any(":" in part for part in path.parts[:1])
+    )
+
+
+def _snapshot_matches(
+    actual: Dict[str, object], expected: Dict[str, object], *, after_rename: bool = False
+) -> bool:
+    """Compare snapshots, allowing rename to update ctime on some filesystems."""
+
+    keys = ("sha256", "size", "executable", "device", "inode", "mtime_ns")
+    if not after_rename:
+        keys += ("ctime_ns",)
+    return all(actual.get(key) == expected.get(key) for key in keys)
+
+
+def _commit_staged_file(staged: Path, destination: Path) -> None:
+    """Publish a staged file without replacing a path created concurrently."""
+
+    try:
+        os.link(staged, destination, follow_symlinks=False)
+    except FileExistsError as error:
+        raise FileExistsError(
+            f"Asset destination changed during installation: {destination}"
+        ) from error
+    except OSError as error:
+        if error.errno != errno.EXDEV:
+            raise
+        # A target may contain a mounted subdirectory. Copy beside the final
+        # destination, then link atomically so a concurrent path creation still
+        # fails without replacing the other process's file.
+        descriptor, temporary_name = tempfile.mkstemp(
+            prefix=".ai-data-compass-stage-", dir=str(destination.parent)
+        )
+        os.close(descriptor)
+        local_stage = Path(temporary_name)
+        try:
+            shutil.copy2(staged, local_stage)
+            try:
+                os.link(local_stage, destination, follow_symlinks=False)
+            except FileExistsError as link_error:
+                raise FileExistsError(
+                    f"Asset destination changed during installation: {destination}"
+                ) from link_error
+        finally:
+            try:
+                local_stage.unlink()
+            except OSError:
+                pass
+    try:
+        staged.unlink()
+    except OSError:
+        # The published file is valid; temporary staging cleanup runs in the
+        # transaction's finally block.
+        pass
+
+
 @contextmanager
 def _installation_lock(target: Path):
     """Serialize installations targeting the same repository."""
@@ -530,7 +618,7 @@ def validate_installation(target: Path) -> List[str]:
     if not target.is_dir():
         return [f"Target directory does not exist: {target}"]
     manifest_path = target / MANIFEST_RELATIVE_PATH
-    if not manifest_path.is_file():
+    if manifest_path.is_symlink() or not manifest_path.is_file():
         return [f"Manifest not found: {MANIFEST_RELATIVE_PATH}"]
     try:
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -544,8 +632,8 @@ def validate_installation(target: Path) -> List[str]:
         errors.append("Unsupported manifest format")
     if manifest.get("package") != PACKAGE_NAME:
         errors.append("Manifest package does not match this package")
-    if manifest.get("version") != __version__:
-        errors.append("Manifest version does not match this package")
+    if not isinstance(manifest.get("version"), str) or not manifest["version"]:
+        errors.append("Manifest version is invalid")
 
     assets = manifest.get("assets")
     if not isinstance(assets, list) or not assets or assets[0] != BASE_ASSET:
@@ -593,10 +681,24 @@ def validate_installation(target: Path) -> List[str]:
         if not isinstance(relative, str):
             errors.append("Manifest contains a file entry without a path")
             continue
+        if not _safe_manifest_path(relative):
+            path_value = Path(relative)
+            if path_value.is_absolute() or ".." in path_value.parts:
+                errors.append(f"Manifest path escapes target: {relative}")
+            else:
+                errors.append(f"Manifest contains an invalid file path: {relative}")
+            continue
+        if "source" in entry and not _safe_manifest_path(entry["source"]):
+            errors.append(f"Manifest contains an invalid source path: {relative}")
+            continue
         if relative in entries_by_path:
             errors.append(f"Manifest contains a duplicate file entry: {relative}")
         entries_by_path[relative] = entry
-        path = (target / relative).resolve()
+        try:
+            path = (target / relative).resolve()
+        except (OSError, RuntimeError, ValueError):
+            errors.append(f"Manifest path could not be safely resolved: {relative}")
+            continue
         try:
             path.relative_to(target.resolve())
         except ValueError:
@@ -605,13 +707,17 @@ def validate_installation(target: Path) -> List[str]:
         if not path.is_file():
             errors.append(f"Installed file is missing: {relative}")
             continue
-        metadata = _file_metadata(path)
+        try:
+            metadata = _file_metadata(path)
+        except OSError:
+            errors.append(f"Installed file could not be inspected: {relative}")
+            continue
         for key in ("sha256", "size", "executable"):
             if metadata[key] != entry.get(key):
                 errors.append(f"Installed file metadata differs: {relative} ({key})")
 
         license_asset = entry.get("license_asset")
-        if license_asset not in {BASE_ASSET} | set(selected):
+        if not isinstance(license_asset, str) or license_asset not in {BASE_ASSET} | set(selected):
             errors.append(f"Unknown license asset for file: {relative}")
         elif license_asset != _license_asset(Path(relative)):
             errors.append(f"License asset does not match file path: {relative}")
@@ -691,7 +797,11 @@ def validate_installation(target: Path) -> List[str]:
         for item in values:
             relative = item.get("path") if isinstance(item, dict) else None
             asset_name = item.get("asset") if isinstance(item, dict) else None
-            if not isinstance(asset_name, str) or not isinstance(relative, str):
+            if (
+                not isinstance(asset_name, str)
+                or not isinstance(relative, str)
+                or not _safe_manifest_path(relative)
+            ):
                 errors.append(f"Manifest {collection} entry is invalid")
                 continue
             if asset_name in actual:
@@ -908,7 +1018,8 @@ def _read_install_manifest(target: Path) -> Tuple[Optional[dict], bool]:
     if (
         manifest.get("format") != MANIFEST_FORMAT
         or manifest.get("package") != PACKAGE_NAME
-        or manifest.get("version") != __version__
+        or not isinstance(manifest.get("version"), str)
+        or not manifest["version"]
     ):
         return None, True
     assets = manifest.get("assets")
@@ -943,12 +1054,28 @@ def _read_install_manifest(target: Path) -> Tuple[Optional[dict], bool]:
         if asset in SKILL_ASSETS
     ):
         return None, True
+    if AGENTS_ASSET in assets:
+        agents_name = manifest.get(
+            "agent_instructions_file", AGENTS_INSTRUCTIONS_PATH.name
+        )
+        if not isinstance(agents_name, str) or not (
+            agents_name == AGENTS_INSTRUCTIONS_PATH.name
+            or is_agents_supplement_filename(agents_name)
+        ):
+            return None, True
+    elif manifest.get("agent_instructions_file") is not None:
+        return None, True
     entry_paths: Set[str] = set()
     for entry in entries:
         if (
             not isinstance(entry, dict)
-            or not isinstance(entry.get("path"), str)
+            or not _safe_manifest_path(entry.get("path"))
             or not isinstance(entry.get("sha256"), str)
+            or re.fullmatch(r"[0-9a-f]{64}", entry["sha256"]) is None
+            or (
+                "source" in entry
+                and not _safe_manifest_path(entry.get("source"))
+            )
         ):
             return None, True
         if entry["path"] in entry_paths:
@@ -978,7 +1105,7 @@ def _install_one_asset(
     """Preflight, stage, and commit one shared-base-plus-selected asset unit."""
 
     overrides = overrides or {}
-    expected_hashes = {
+    expected_metadata = {
         relative_target: _file_metadata(
             source,
             overrides.get(
@@ -987,14 +1114,19 @@ def _install_one_asset(
                     source, relative_target, source_root, skill_names, agents_name
                 ),
             ),
-        )["sha256"]
+        )
         for source, relative_target in files
+    }
+    expected_hashes = {
+        relative: metadata["sha256"]
+        for relative, metadata in expected_metadata.items()
     }
     manifest_entries = _manifest_entries(previous_manifest)
     conflicts: List[Path] = []
     identical: List[Path] = []
     missing: List[Tuple[Path, Path]] = []
     replacements: List[Tuple[Path, Path]] = []
+    replacement_snapshots: Dict[Path, Dict[str, object]] = {}
 
     for source, relative_target in files:
         destination = target / relative_target
@@ -1009,19 +1141,33 @@ def _install_one_asset(
             missing.append((source, relative_target))
         elif not destination.is_file():
             conflicts.append(relative_target)
-        elif _file_metadata(destination)["sha256"] == expected_hashes[relative_target]:
-            identical.append(relative_target)
-        elif relative_target in overrides:
-            replacements.append((source, relative_target))
-        elif (
-            relative_target.parts[:2] == (".ai-data-compass", "docs")
-            and relative_target.as_posix() in manifest_entries
-            and _file_metadata(destination)["sha256"]
-            == manifest_entries[relative_target.as_posix()].get("sha256")
-        ):
-            replacements.append((source, relative_target))
-        else:
-            conflicts.append(relative_target)
+        elif destination.is_file():
+            current_metadata = _file_metadata(destination)
+            if current_metadata["sha256"] == expected_hashes[relative_target]:
+                if current_metadata["executable"] == expected_metadata[relative_target]["executable"]:
+                    identical.append(relative_target)
+                elif (
+                    relative_target.as_posix() in manifest_entries
+                    and current_metadata["sha256"]
+                    == manifest_entries[relative_target.as_posix()].get("sha256")
+                ):
+                    replacements.append((source, relative_target))
+                    replacement_snapshots[relative_target] = _file_snapshot(destination)
+                else:
+                    conflicts.append(relative_target)
+            elif relative_target in overrides:
+                replacements.append((source, relative_target))
+                replacement_snapshots[relative_target] = _file_snapshot(destination)
+            elif (
+                relative_target.parts[:2] == (".ai-data-compass", "docs")
+                and relative_target.as_posix() in manifest_entries
+                and current_metadata["sha256"]
+                == manifest_entries[relative_target.as_posix()].get("sha256")
+            ):
+                replacements.append((source, relative_target))
+                replacement_snapshots[relative_target] = _file_snapshot(destination)
+            else:
+                conflicts.append(relative_target)
 
     if conflicts:
         return (
@@ -1045,7 +1191,11 @@ def _install_one_asset(
             for _, relative in files
         )
     )
-    if not missing and not replacements:
+    version_update_required = (
+        previous_manifest is not None
+        and previous_manifest.get("version") != __version__
+    )
+    if not missing and not replacements and not version_update_required:
         status = "already_installed" if was_registered else "identical"
         return AssetInstallOutcome(asset, status, identical=identical), previous_manifest
 
@@ -1112,8 +1262,9 @@ def _install_one_asset(
             dir=str(target.parent),
         )
     )
-    committed_paths: List[Path] = []
+    committed_paths: List[Tuple[Path, Dict[str, object]]] = []
     created_directories: List[Path] = []
+    backups: List[Tuple[Path, Path]] = []
     try:
         for source, relative_target in missing + replacements:
             staged = stage / relative_target
@@ -1137,23 +1288,39 @@ def _install_one_asset(
             encoding="utf-8",
         )
 
-        backups: List[Tuple[Path, Path]] = []
         replacement_set = {relative for _, relative in replacements}
         for _, relative_target in missing + replacements:
             _validate_destination(target, relative_target)
             destination = target / relative_target
-            if relative_target in replacement_set and destination.is_file() and not destination.is_symlink():
+            if relative_target in replacement_set:
+                expected_snapshot = replacement_snapshots[relative_target]
+                if destination.is_symlink() or not destination.is_file():
+                    raise FileExistsError(
+                        f"Asset destination changed during installation: {relative_target}"
+                    )
+                if not _snapshot_matches(_file_snapshot(destination), expected_snapshot):
+                    raise FileExistsError(
+                        f"Asset destination changed during installation: {relative_target}"
+                    )
                 backup = stage / "previous" / relative_target
                 backup.parent.mkdir(parents=True, exist_ok=True)
                 os.replace(destination, backup)
                 backups.append((destination, backup))
+                if not _snapshot_matches(
+                    _file_snapshot(backup), expected_snapshot, after_rename=True
+                ):
+                    raise FileExistsError(
+                        f"Asset destination changed during installation: {relative_target}"
+                    )
             elif destination.exists() or destination.is_symlink():
                 raise FileExistsError(
                     f"Asset destination changed during installation: {relative_target}"
                 )
             _make_parent_directories(destination.parent, created_directories)
-            os.replace(stage / relative_target, destination)
-            committed_paths.append(destination)
+            staged = stage / relative_target
+            expected_installed = _file_metadata(staged)
+            _commit_staged_file(staged, destination)
+            committed_paths.append((destination, expected_installed))
 
         manifest_path = target / MANIFEST_RELATIVE_PATH
         if previous_manifest is None:
@@ -1169,19 +1336,59 @@ def _install_one_asset(
                     "Installation manifest changed during installation: "
                     f"{MANIFEST_RELATIVE_PATH}"
                 )
+            manifest_snapshot = _file_snapshot(manifest_path)
+            manifest_backup = stage / "previous" / MANIFEST_RELATIVE_PATH
+            manifest_backup.parent.mkdir(parents=True, exist_ok=True)
+            os.replace(manifest_path, manifest_backup)
+            backups.append((manifest_path, manifest_backup))
+            if not _snapshot_matches(
+                _file_snapshot(manifest_backup), manifest_snapshot, after_rename=True
+            ):
+                raise FileExistsError(
+                    "Installation manifest changed during installation: "
+                    f"{MANIFEST_RELATIVE_PATH}"
+                )
         _make_parent_directories(manifest_path.parent, created_directories)
-        os.replace(staged_manifest, manifest_path)
+        expected_manifest = _file_metadata(staged_manifest)
+        _commit_staged_file(staged_manifest, manifest_path)
+        committed_paths.append((manifest_path, expected_manifest))
+        for path, expected_metadata in committed_paths:
+            if path.is_symlink() or not path.is_file():
+                raise FileExistsError(f"Asset destination changed during installation: {path}")
+            current_metadata = _file_metadata(path)
+            if any(
+                current_metadata.get(key) != expected_metadata.get(key)
+                for key in ("sha256", "size", "executable")
+            ):
+                raise FileExistsError(f"Asset destination changed during installation: {path}")
     except Exception as install_error:
         rollback_failures: List[Path] = []
-        for path in reversed(committed_paths):
+        preserved_paths: Set[Path] = set()
+        for path, expected_metadata in reversed(committed_paths):
             try:
+                if path.is_symlink() or not path.is_file():
+                    preserved_paths.add(path)
+                    continue
+                current_metadata = _file_metadata(path)
+                if any(
+                    current_metadata.get(key) != expected_metadata.get(key)
+                    for key in ("sha256", "size", "executable")
+                ):
+                    preserved_paths.add(path)
+                    continue
                 path.unlink()
             except OSError:
                 rollback_failures.append(path)
         for destination, backup in reversed(locals().get("backups", [])):
             try:
-                if backup.exists():
-                    os.replace(backup, destination)
+                if not backup.exists():
+                    continue
+                if destination in preserved_paths:
+                    continue
+                if destination.exists() or destination.is_symlink():
+                    preserved_paths.add(destination)
+                    continue
+                _commit_staged_file(backup, destination)
             except OSError:
                 rollback_failures.append(destination)
         for directory in sorted(created_directories, key=lambda item: len(item.parts), reverse=True):
