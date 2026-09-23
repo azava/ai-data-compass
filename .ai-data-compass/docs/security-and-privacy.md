@@ -1,7 +1,6 @@
 # Security and Privacy Details
 
-This document contains additional security and privacy procedures for the
-rules in `AGENTS.md`.
+This document contains additional security and privacy procedures for the rules in `AGENTS.md`.
 
 ## Project Rules
 
