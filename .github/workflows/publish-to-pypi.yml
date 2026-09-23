@@ -30,6 +30,7 @@ jobs:
         run: |
           python - <<'PY'
           import os
+          import re
           import tomllib
           from pathlib import Path
 
@@ -38,6 +39,8 @@ jobs:
 
           expected_tag = f"v{version}"
           actual_tag = os.environ["RELEASE_TAG"]
+          if not re.fullmatch(r"v\d+\.\d+\.\d+", actual_tag):
+              raise SystemExit("PyPI releases require a stable vMAJOR.MINOR.PATCH tag")
           if actual_tag != expected_tag:
               raise SystemExit(
                   f"Release tag {actual_tag!r} does not match {expected_tag!r}"
