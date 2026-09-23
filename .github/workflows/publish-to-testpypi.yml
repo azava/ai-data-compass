@@ -30,7 +30,6 @@ jobs:
 
       - name: Set unique development version
         env:
-          DEV_VERSION_BASE: "0.0.2"
           DEV_BUILD_NUMBER: ${{ github.run_number }}
         run: |
           python - <<'PY'
@@ -42,9 +41,13 @@ jobs:
           project_file = Path("pyproject.toml")
           contents = project_file.read_text(encoding="utf-8")
           with project_file.open("rb") as file:
-              current_version = tomllib.load(file)["project"]["version"]
+              metadata = tomllib.load(file)
+          current_version = metadata["project"]["version"]
 
-          base_version = os.environ["DEV_VERSION_BASE"]
+          try:
+              base_version = metadata["tool"]["ai-data-compass"]["release"]["testpypi-base-version"]
+          except KeyError as error:
+              raise SystemExit("Set tool.ai-data-compass.release.testpypi-base-version in pyproject.toml") from error
           if not re.fullmatch(r"\d+\.\d+\.\d+", base_version):
               raise SystemExit(f"Invalid stable development base version: {base_version!r}")
 
@@ -59,6 +62,19 @@ jobs:
               raise SystemExit("Could not safely locate project.version in pyproject.toml")
 
           project_file.write_text(updated_contents, encoding="utf-8")
+
+          version_module = Path("src/ai_data_compass/__init__.py")
+          module_contents = version_module.read_text(encoding="utf-8")
+          module_version_line = re.compile(r'(?m)^(__version__\s*=\s*)"[^"]+"$')
+          updated_module, module_replacements = module_version_line.subn(
+              lambda match: f'{match.group(1)}"{development_version}"',
+              module_contents,
+              count=1,
+          )
+          if module_replacements != 1:
+              raise SystemExit("Could not safely locate __version__ in the package module")
+          version_module.write_text(updated_module, encoding="utf-8")
+
           print(f"Building TestPyPI development version {development_version}")
           print(f"Source version before temporary build change: {current_version}")
           PY
