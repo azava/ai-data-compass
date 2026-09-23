@@ -1,0 +1,7 @@
+[
+  {
+    "asset": "security_audit",
+    "directory": "security-audit",
+    "description": "Security audit skill and host adapters"
+  }
+]
