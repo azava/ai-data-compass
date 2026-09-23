@@ -75,12 +75,14 @@ class DistributionTests(unittest.TestCase):
         distribution = (
             REPOSITORY_ROOT / ".ai-data-compass" / "docs" / "distribution.md"
         ).read_text(encoding="utf-8")
-        for content in (readme, distribution):
-            self.assertIn("python -m pip install .", content)
-            self.assertIn("pipx install .", content)
-            self.assertIn("not yet published to PyPI", content)
-            self.assertIn("python -m pip install ai-data-compass", content)
-            self.assertIn("pipx install ai-data-compass", content)
+        self.assertIn("python -m pip install ai-data-compass", readme)
+        self.assertIn("ai-data-compass init --assets complete", readme)
+
+        self.assertIn("python -m pip install .", distribution)
+        self.assertIn("pipx install .", distribution)
+        self.assertIn("not yet published to PyPI", distribution)
+        self.assertIn("python -m pip install ai-data-compass", distribution)
+        self.assertIn("pipx install ai-data-compass", distribution)
     def test_python_requirement_and_compatibility_metadata(self) -> None:
         pyproject = (REPOSITORY_ROOT / "pyproject.toml").read_text(encoding="utf-8")
 
@@ -254,6 +256,14 @@ class DistributionTests(unittest.TestCase):
                 self.assertIn("Version: 0.0.1", metadata)
                 self.assertIn("Requires-Python: >=3.9", metadata)
                 self.assertIn("Author: Alex Zava", metadata)
+                self.assertIn(
+                    "Project-URL: Repository, https://github.com/azava/ai-data-compass",
+                    metadata,
+                )
+                self.assertIn(
+                    "Project-URL: Documentation, https://github.com/azava/ai-data-compass/blob/main/.ai-data-compass/docs/README.md",
+                    metadata,
+                )
                 self.assertIn("ai-data-compass = ai_data_compass.cli:main", archive.read(next(
                     name for name in names if name.endswith(".dist-info/entry_points.txt")
                 )).decode("utf-8"))
