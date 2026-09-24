@@ -4,7 +4,7 @@ AI Data Compass is distributed as the `ai-data-compass` Python package. Its CLI 
 
 The initial package supports Python 3.9 and newer. Compatibility should be verified across the supported interpreter matrix before each release.
 
-The package is not yet published to PyPI. To install the current local source, run these commands from the repository root:
+Version `0.0.1` is published on PyPI. To install the current local source, run these commands from the repository root:
 
 ```bash
 python -m pip install .
@@ -33,6 +33,10 @@ The manifest format version is independent of the package version. `init` and `v
 The package license describes the Python distribution. The license files installed under `.ai-data-compass/` apply only to the AI Data Compass assets listed in the manifest and do not change the adopting repository's license. Each skill has its own scoped license and third-party notice file.
 
 The current base asset and `security_audit` skill contain no third-party material. Their notice files are included so future material can be recorded without changing the asset layout.
+
+Stable releases are published to PyPI by `.github/workflows/publish-to-pypi.yml` when a stable `vMAJOR.MINOR.PATCH` tag is pushed. The workflow verifies that the tag matches the project version, builds and validates a wheel and source distribution, then publishes through the protected `pypi` GitHub environment using Trusted Publishing.
+
+Pushes to the `dev` branch are published to TestPyPI by `.github/workflows/publish-to-testpypi.yml`. The workflow reads the development release base from `tool.ai-data-compass.release.testpypi-base-version` in `pyproject.toml` and creates a unique `.devN` version in its temporary runner checkout, where `N` is the GitHub Actions workflow run number. It synchronizes package metadata and the CLI-reported version in that temporary checkout; committed source files are unchanged. The TestPyPI publisher uses the separate `testpypi` GitHub environment and never publishes these builds to PyPI.
 
 `init` checks each selected asset before writing files. It installs missing files, leaves files with matching content and executable status unchanged, repairs executable status on registered files, and refuses an asset if any of its existing files differ. A refused asset does not prevent other selected assets from being installed, and `init` exits with a nonzero status if any asset is refused. When files have matching content and executable status but are not recorded in the AI Data Compass manifest, the CLI reports them as identical existing files rather than claiming that the asset was already installed. `init --dry-run` applies the same checks and reports planned per-asset outcomes without writing files.
 

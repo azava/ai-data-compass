@@ -25,8 +25,19 @@ assert_not_contains() {
 [[ -f $ADAPTER ]] || fail 'Codex adapter is missing'
 [[ -f $CANONICAL ]] || fail 'canonical skill is missing'
 
+description=$(awk '
+    NR == 1 && $0 == "---" { in_frontmatter = 1; next }
+    in_frontmatter && $0 == "---" { exit }
+    in_frontmatter && /description:/ {
+        sub(/^.*description:[[:space:]]*/, "")
+        print
+        exit
+    }
+' "$CANONICAL")
+[[ -n $description ]] || fail 'canonical skill description is missing'
+
 assert_contains "$ADAPTER" 'name: security-audit'
-assert_contains "$ADAPTER" 'description: Audit a repository for credential exposure in its working tree and Git history.'
+assert_contains "$ADAPTER" "description: $description"
 assert_contains "$ADAPTER" '.ai-data-compass/skills/security-audit/SKILL.md'
 assert_not_contains "$ADAPTER" '.agents/skills/security-audit/scripts/'
 assert_not_contains "$ADAPTER" '.agents/skills/security-audit/references/'

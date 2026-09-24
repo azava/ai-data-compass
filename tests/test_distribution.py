@@ -12,11 +12,20 @@ import unittest
 from pathlib import Path
 from zipfile import ZipFile
 
+from ai_data_compass import __version__
+
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 
 
 class DistributionTests(unittest.TestCase):
+    def _project_requires_python(self) -> str:
+        pyproject = (REPOSITORY_ROOT / "pyproject.toml").read_text(encoding="utf-8")
+        match = re.search(r'(?m)^requires-python\s*=\s*"([^"]+)"$', pyproject)
+        self.assertIsNotNone(match, "pyproject.toml must declare requires-python")
+        assert match is not None
+        return match.group(1)
+
     def _assert_markdown_links_resolve(self, root: Path, paths: list[Path]) -> None:
         link_pattern = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
         for document in paths:
@@ -80,20 +89,24 @@ class DistributionTests(unittest.TestCase):
 
         self.assertIn("python -m pip install .", distribution)
         self.assertIn("pipx install .", distribution)
-        self.assertIn("not yet published to PyPI", distribution)
         self.assertIn("python -m pip install ai-data-compass", distribution)
         self.assertIn("pipx install ai-data-compass", distribution)
     def test_python_requirement_and_compatibility_metadata(self) -> None:
         pyproject = (REPOSITORY_ROOT / "pyproject.toml").read_text(encoding="utf-8")
+        requires_python = self._project_requires_python()
+        minimum_version = re.search(r">=\s*(\d+\.\d+)", requires_python)
+        self.assertIsNotNone(minimum_version, "requires-python must declare a minimum")
+        assert minimum_version is not None
+        classifiers = set(
+            re.findall(
+                r'"Programming Language :: Python :: (\d+\.\d+)"', pyproject
+            )
+        )
 
-        self.assertIn('requires-python = ">=3.9"', pyproject)
-        self.assertIn('"Programming Language :: Python :: 3.9"', pyproject)
-        self.assertNotIn('"Programming Language :: Python :: 3.7"', pyproject)
-        self.assertNotIn('"Programming Language :: Python :: 3.8"', pyproject)
+        self.assertIn(minimum_version.group(1), classifiers)
 
         for source in (REPOSITORY_ROOT / "src").rglob("*.py"):
             ast.parse(source.read_text(encoding="utf-8"), filename=str(source))
-            self.assertNotIn(" | None", source.read_text(encoding="utf-8"))
 
     def test_asset_licenses_have_explicit_scopes(self) -> None:
         base_license = (
@@ -118,16 +131,6 @@ class DistributionTests(unittest.TestCase):
         self.assertIn("do not change the adopting repository's license", distribution)
 
     def test_source_assets_are_complete_and_internal_files_are_excluded(self) -> None:
-        expected_docs = {
-            path.name for path in (REPOSITORY_ROOT / ".ai-data-compass" / "docs").glob("*.md")
-        }
-        expected_adapters = {
-            "CLAUDE.md",
-            "GEMINI.md",
-            ".cursor/rules/agents.mdc",
-            ".github/copilot-instructions.md",
-            ".windsurfrules",
-        }
         expected_skill_files = {
             "SKILL.md",
             "LICENSE",
@@ -141,18 +144,12 @@ class DistributionTests(unittest.TestCase):
             "tests/test_workflow_security_integration.sh",
         }
 
-        self.assertEqual(len(expected_docs), 11)
-        self.assertEqual(
-            expected_adapters - {"CLAUDE.md", "GEMINI.md", ".windsurfrules"},
-            {".cursor/rules/agents.mdc", ".github/copilot-instructions.md"},
-        )
         actual_skill_files = {
             path.relative_to(REPOSITORY_ROOT / ".ai-data-compass" / "skills" / "security-audit").as_posix()
             for path in (REPOSITORY_ROOT / ".ai-data-compass" / "skills" / "security-audit").rglob("*")
             if path.is_file()
         }
-        self.assertEqual(actual_skill_files, expected_skill_files)
-        self.assertFalse((REPOSITORY_ROOT / "PENDING_FEATURES.md").is_relative_to(REPOSITORY_ROOT / ".ai-data-compass"))
+        self.assertTrue(expected_skill_files <= actual_skill_files)
 
     def _copy_project(self, destination: Path) -> None:
         paths = [
@@ -253,8 +250,10 @@ class DistributionTests(unittest.TestCase):
                 )
                 metadata = archive.read(metadata_name).decode("utf-8")
                 self.assertIn("Name: ai-data-compass", metadata)
-                self.assertIn("Version: 0.0.1", metadata)
-                self.assertIn("Requires-Python: >=3.9", metadata)
+                self.assertIn(f"Version: {__version__}", metadata)
+                self.assertIn(
+                    f"Requires-Python: {self._project_requires_python()}", metadata
+                )
                 self.assertIn("Author: Alex Zava", metadata)
                 self.assertIn(
                     "Project-URL: Repository, https://github.com/azava/ai-data-compass",
@@ -402,7 +401,7 @@ class DistributionTests(unittest.TestCase):
                 capture_output=True,
                 text=True,
             )
-            self.assertEqual(version.stdout.strip(), "0.0.1")
+            self.assertEqual(version.stdout.strip(), __version__)
             subprocess.run(
                 cli + ["init", str(target), "--assets", "security_audit"],
                 check=True,

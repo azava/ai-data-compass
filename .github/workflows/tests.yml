@@ -49,7 +49,7 @@ jobs:
         run: |
           set +e
           echo "::group::Run unit, distribution, and CLI tests"
-          PYTHONPATH=src python -m unittest discover -s tests -v
+          PYTHONPATH=src python -m unittest discover -s tests -q -b
           status=$?
           echo "::endgroup::"
           set -e
