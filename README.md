@@ -26,6 +26,7 @@ When `AGENTS.md` already contains different instructions, the installer asks per
 | Name | Description | How to use |
 | --- | --- | --- |
 | `agents.md` | `AGENTS.md` guidance and host adapters for supported coding agents. Tested with Claude and Codex | Your agent should import and follow `AGENTS.md`; instructions already defined by the project take precedence if they conflict. |
+| `project_review` | Read-only senior review of a complete repository, with an optional hosted-repository review. | Ask your agent to run the `project-review` skill; hosted review requires your approval to access the repository platform. |
 | `security_audit` | Security-audit skill with its scanner, references, tests, and Codex and Claude adapters. | Ask your agent to run the `security-audit` skill and review its metadata-only findings. |
 
 ## Documentation
