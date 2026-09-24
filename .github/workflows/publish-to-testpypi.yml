@@ -16,6 +16,8 @@ jobs:
   build:
     name: Build and validate development distributions
     runs-on: ubuntu-latest
+    outputs:
+      package-version: ${{ steps.development-version.outputs.package-version }}
 
     steps:
       - name: Check out source
@@ -29,6 +31,7 @@ jobs:
           python-version: "3.13"
 
       - name: Set unique development version
+        id: development-version
         env:
           DEV_BUILD_NUMBER: ${{ github.run_number }}
         run: |
@@ -77,6 +80,8 @@ jobs:
 
           print(f"Building TestPyPI development version {development_version}")
           print(f"Source version before temporary build change: {current_version}")
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as output:
+              output.write(f"package-version={development_version}\n")
           PY
 
       - name: Install build tools
@@ -117,3 +122,28 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
+
+  verify-install:
+    name: Verify published TestPyPI package
+    needs: [build, publish]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install and smoke-test published package
+        env:
+          PACKAGE_VERSION: ${{ needs.build.outputs.package-version }}
+        run: >-
+          python .github/scripts/smoke_test_published_package.py
+          --version "$PACKAGE_VERSION"
+          --index-url https://test.pypi.org/simple/
+          --extra-index-url https://pypi.org/simple/

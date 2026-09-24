@@ -24,6 +24,23 @@ jobs:
         with:
           python-version: "3.13"
 
+      - name: Fetch main history
+        run: git fetch --no-tags --unshallow origin +refs/heads/main:refs/remotes/origin/main
+
+      - name: Verify release commit is on main
+        env:
+          RELEASE_COMMIT: ${{ github.sha }}
+        run: |
+          main_ref="refs/remotes/origin/main"
+          if ! git show-ref --verify --quiet "$main_ref"; then
+            echo "::error::Could not resolve origin/main from the release checkout"
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "$RELEASE_COMMIT" "$main_ref"; then
+            echo "::error::The release tag does not point to a commit contained in main"
+            exit 1
+          fi
+
       - name: Check tag matches package version
         env:
           RELEASE_TAG: ${{ github.ref_name }}
@@ -108,3 +125,27 @@ jobs:
 
       - name: Publish distributions
         uses: pypa/gh-action-pypi-publish@release/v1
+
+  verify-install:
+    name: Verify published PyPI package
+    needs: publish
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install and smoke-test published package
+        env:
+          PACKAGE_VERSION: ${{ github.ref_name }}
+        run: >-
+          python .github/scripts/smoke_test_published_package.py
+          --version "${PACKAGE_VERSION#v}"
+          --index-url https://pypi.org/simple/
