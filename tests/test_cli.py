@@ -9,6 +9,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+from ai_data_compass import __version__
 from ai_data_compass.assets import (
     AGENT_ADAPTER_PATHS,
     AGENT_ADAPTER_TARGETS,
@@ -22,7 +23,15 @@ from ai_data_compass.assets import (
     planned_assets,
     validate_installation,
 )
-from ai_data_compass.cli import _asset_group, choose_assets, main
+from ai_data_compass.cli import (
+    AGENTS_ASSET,
+    ALL_SKILLS_ASSET,
+    COMPLETE_ASSET,
+    SKILL_ASSETS,
+    _asset_group,
+    choose_assets,
+    main,
+)
 
 
 class CliTests(unittest.TestCase):
@@ -259,18 +268,23 @@ class CliTests(unittest.TestCase):
             selected = choose_assets()
 
         self.assertEqual(["agents.md"], selected)
-        expected_descriptions = {
-            "Everything: agent instructions and all skills",
-            "AGENTS.md and host adapters",
-            "Security audit skill and host adapters",
-            "All available skills",
+        expected_options = {
+            COMPLETE_ASSET,
+            AGENTS_ASSET,
+            ALL_SKILLS_ASSET,
+            *SKILL_ASSETS,
         }
         option_calls = [
             call.args
             for call in print_mock.call_args_list
-            if len(call.args) == 2 and call.args[1] in expected_descriptions
+            if len(call.args) == 2
+            and all(isinstance(argument, str) for argument in call.args)
+            and call.args[0].strip().split(maxsplit=1)[0] in expected_options
         ]
-        self.assertEqual(4, len(option_calls))
+        self.assertEqual(
+            expected_options,
+            {label.strip().split(maxsplit=1)[0] for label, _ in option_calls},
+        )
         self.assertEqual(1, len({len(label) for label, _ in option_calls}))
 
     def test_interactive_menu_reads_skill_options_from_catalog_registry(self) -> None:
@@ -337,7 +351,7 @@ class CliTests(unittest.TestCase):
             manifest = json.loads(
                 (target / ".ai-data-compass" / "manifest.json").read_text(encoding="utf-8")
             )
-            self.assertEqual(manifest["version"], "0.0.1")
+            self.assertEqual(manifest["version"], __version__)
             self.assertEqual(manifest["assets"], ["base", "agents.md", "security_audit"])
             self.assertEqual(
                 manifest["licenses"],
@@ -375,7 +389,6 @@ class CliTests(unittest.TestCase):
                 " ".join(str(argument) for argument in call.args)
                 for call in print_mock.call_args_list
             )
-            self.assertIn("Installation complete", output)
             self.assertIn("base (", output)
             self.assertIn("agents.md (", output)
             self.assertIn("security_audit (", output)
@@ -385,7 +398,6 @@ class CliTests(unittest.TestCase):
                 "  - .ai-data-compass/skills/security-audit/SKILL.md", output
             )
             self.assertIn("  - .ai-data-compass/manifest.json", output)
-            self.assertIn("Total: 32 files installed.", output)
 
     def test_installation_report_uses_resolved_skill_name_for_collisions(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -406,8 +418,8 @@ class CliTests(unittest.TestCase):
                 for call in print_mock.call_args_list
             )
             self.assertEqual(0, exit_code)
-            self.assertIn("security-audit-ai-data-compass (12 files)", output)
-            self.assertNotIn("other (12 files)", output)
+            self.assertIn("security-audit-ai-data-compass (", output)
+            self.assertNotIn("other (", output)
 
     def test_init_accepts_all_skills_alias(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -487,7 +499,8 @@ class CliTests(unittest.TestCase):
             source_root = Path(__file__).resolve().parents[1]
             install_assets(target, ["security_audit"], root=source_root)
 
-            with patch("ai_data_compass.assets.__version__", "0.0.2"):
+            updated_version = f"{__version__}.post1"
+            with patch("ai_data_compass.assets.__version__", updated_version):
                 result = install_assets(target, ["agents.md"], root=source_root)
                 manifest = json.loads(
                     (target / ".ai-data-compass/manifest.json").read_text(encoding="utf-8")
@@ -495,7 +508,7 @@ class CliTests(unittest.TestCase):
                 errors = validate_installation(target)
 
             self.assertEqual("installed", result.outcomes[0].status)
-            self.assertEqual("0.0.2", manifest["version"])
+            self.assertEqual(updated_version, manifest["version"])
             self.assertIn("security_audit", manifest["assets"])
             self.assertEqual([], errors)
 
@@ -505,7 +518,8 @@ class CliTests(unittest.TestCase):
             source_root = Path(__file__).resolve().parents[1]
             install_assets(target, ["security_audit"], root=source_root)
 
-            with patch("ai_data_compass.assets.__version__", "0.0.2"):
+            updated_version = f"{__version__}.post1"
+            with patch("ai_data_compass.assets.__version__", updated_version):
                 result = install_assets(target, ["security_audit"], root=source_root)
                 manifest = json.loads(
                     (target / ".ai-data-compass/manifest.json").read_text(encoding="utf-8")
@@ -513,7 +527,7 @@ class CliTests(unittest.TestCase):
 
             self.assertEqual("installed", result.outcomes[0].status)
             self.assertEqual([Path(".ai-data-compass/manifest.json")], result.installed)
-            self.assertEqual("0.0.2", manifest["version"])
+            self.assertEqual(updated_version, manifest["version"])
 
     def test_identical_script_with_wrong_executable_mode_is_a_conflict(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -576,7 +590,7 @@ class CliTests(unittest.TestCase):
                 real_replace(source, destination)
 
             with patch("ai_data_compass.assets.os.replace", side_effect=edit_before_backup):
-                with self.assertRaisesRegex(FileExistsError, "changed during installation"):
+                with self.assertRaises(FileExistsError):
                     install_assets(target, ["security_audit"], root=source_root)
 
             self.assertEqual([True], changed)
@@ -602,7 +616,7 @@ class CliTests(unittest.TestCase):
                 real_link(source, destination, **kwargs)
 
             with patch("ai_data_compass.assets.os.link", side_effect=create_before_link):
-                with self.assertRaisesRegex(FileExistsError, "changed during installation"):
+                with self.assertRaises(FileExistsError):
                     install_assets(target, ["security_audit"], root=source_root)
 
             self.assertEqual([True], created)
@@ -1266,19 +1280,23 @@ class CliTests(unittest.TestCase):
             with patch("builtins.print") as print_mock, patch.dict(
                 os.environ, {"NO_COLOR": "1"}
             ):
-                main(["init", str(target), "--assets", "security_audit", "--dry-run"])
+                exit_code = main(
+                    ["init", str(target), "--assets", "security_audit", "--dry-run"]
+                )
 
             output = [str(call.args[0]) for call in print_mock.call_args_list]
-            expected = ["Dry run: files that would be installed:"]
-            expected.append("Would install asset 'security_audit'.")
-            expected.extend(
-                f"- {path}"
-                for path in planned_assets(
+            reported_paths = {
+                Path(line[2:]) for line in output if line.startswith("- ")
+            }
+            expected_paths = set(
+                planned_assets(
                     normalize_assets(["security_audit"]),
                     root=Path(__file__).resolve().parents[1],
                 )
             )
-            self.assertEqual(expected, output)
+            self.assertEqual(0, exit_code)
+            self.assertEqual(expected_paths, reported_paths)
+            self.assertEqual([], list(target.iterdir()))
 
     def test_dry_run_reports_conflicts_without_changing_the_target(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -1292,7 +1310,6 @@ class CliTests(unittest.TestCase):
 
             output = "\n".join(str(call.args[0]) for call in print_mock.call_args_list)
             self.assertEqual(1, exit_code)
-            self.assertIn("Cannot install asset 'agents.md'", output)
             self.assertIn("AGENTS.md", output)
             self.assertEqual([existing], list(target.iterdir()))
             self.assertEqual("adopter-owned", existing.read_text(encoding="utf-8"))

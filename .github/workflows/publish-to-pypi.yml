@@ -30,6 +30,7 @@ jobs:
         run: |
           python - <<'PY'
           import os
+          import re
           import tomllib
           from pathlib import Path
 
@@ -38,10 +39,37 @@ jobs:
 
           expected_tag = f"v{version}"
           actual_tag = os.environ["RELEASE_TAG"]
+          if not re.fullmatch(r"v\d+\.\d+\.\d+", actual_tag):
+              raise SystemExit("PyPI releases require a stable vMAJOR.MINOR.PATCH tag")
           if actual_tag != expected_tag:
               raise SystemExit(
                   f"Release tag {actual_tag!r} does not match {expected_tag!r}"
               )
+          PY
+
+      - name: Sync CLI version with project metadata
+        run: |
+          python - <<'PY'
+          import re
+          import tomllib
+          from pathlib import Path
+
+          with Path("pyproject.toml").open("rb") as file:
+              project_version = tomllib.load(file)["project"]["version"]
+
+          version_module = Path("src/ai_data_compass/__init__.py")
+          contents = version_module.read_text(encoding="utf-8")
+          version_line = re.compile(r'(?m)^(__version__\s*=\s*)"[^"]+"$')
+          updated_contents, replacements = version_line.subn(
+              lambda match: f'{match.group(1)}"{project_version}"',
+              contents,
+              count=1,
+          )
+          if replacements != 1:
+              raise SystemExit("Could not safely locate __version__ in the package module")
+
+          version_module.write_text(updated_contents, encoding="utf-8")
+          print(f"Building CLI with version {project_version}")
           PY
 
       - name: Install build tools

@@ -1,0 +1,119 @@
+name: Publish development builds to TestPyPI
+
+on:
+  push:
+    branches:
+      - dev
+
+permissions:
+  contents: read
+
+concurrency:
+  group: testpypi-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build and validate development distributions
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Set unique development version
+        env:
+          DEV_BUILD_NUMBER: ${{ github.run_number }}
+        run: |
+          python - <<'PY'
+          import os
+          import re
+          import tomllib
+          from pathlib import Path
+
+          project_file = Path("pyproject.toml")
+          contents = project_file.read_text(encoding="utf-8")
+          with project_file.open("rb") as file:
+              metadata = tomllib.load(file)
+          current_version = metadata["project"]["version"]
+
+          try:
+              base_version = metadata["tool"]["ai-data-compass"]["release"]["testpypi-base-version"]
+          except KeyError as error:
+              raise SystemExit("Set tool.ai-data-compass.release.testpypi-base-version in pyproject.toml") from error
+          if not re.fullmatch(r"\d+\.\d+\.\d+", base_version):
+              raise SystemExit(f"Invalid stable development base version: {base_version!r}")
+
+          development_version = f"{base_version}.dev{os.environ['DEV_BUILD_NUMBER']}"
+          version_line = re.compile(r'(?m)^(version\s*=\s*)"[^"]+"$')
+          updated_contents, replacements = version_line.subn(
+              lambda match: f'{match.group(1)}"{development_version}"',
+              contents,
+              count=1,
+          )
+          if replacements != 1:
+              raise SystemExit("Could not safely locate project.version in pyproject.toml")
+
+          project_file.write_text(updated_contents, encoding="utf-8")
+
+          version_module = Path("src/ai_data_compass/__init__.py")
+          module_contents = version_module.read_text(encoding="utf-8")
+          module_version_line = re.compile(r'(?m)^(__version__\s*=\s*)"[^"]+"$')
+          updated_module, module_replacements = module_version_line.subn(
+              lambda match: f'{match.group(1)}"{development_version}"',
+              module_contents,
+              count=1,
+          )
+          if module_replacements != 1:
+              raise SystemExit("Could not safely locate __version__ in the package module")
+          version_module.write_text(updated_module, encoding="utf-8")
+
+          print(f"Building TestPyPI development version {development_version}")
+          print(f"Source version before temporary build change: {current_version}")
+          PY
+
+      - name: Install build tools
+        run: python -m pip install --upgrade build twine
+
+      - name: Build distributions
+        run: python -m build
+
+      - name: Validate distributions
+        run: python -m twine check dist/*
+
+      - name: Save distributions
+        uses: actions/upload-artifact@v5
+        with:
+          name: python-package-distributions
+          path: dist/
+
+  publish:
+    name: Publish to TestPyPI
+    needs: build
+    runs-on: ubuntu-latest
+
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/project/ai-data-compass/
+
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Download distributions
+        uses: actions/download-artifact@v6
+        with:
+          name: python-package-distributions
+          path: dist/
+
+      - name: Publish distributions
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
