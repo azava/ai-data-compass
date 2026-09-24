@@ -61,7 +61,7 @@ class DistributionTests(unittest.TestCase):
                     "init",
                     str(target),
                     "--assets",
-                    "agents.md,security_audit",
+                    "agents.md,security_audit,project_review",
                 ],
                 check=True,
                 capture_output=True,
@@ -78,6 +78,39 @@ class DistributionTests(unittest.TestCase):
                 ]
             )
             self._assert_markdown_links_resolve(target, documents)
+            canonical_skill = (
+                target
+                / ".ai-data-compass"
+                / "skills"
+                / "project-review"
+                / "SKILL.md"
+            )
+            codex_adapter = (
+                target / ".agents" / "skills" / "project-review" / "SKILL.md"
+            )
+            claude_adapter = (
+                target / ".claude" / "skills" / "project-review" / "SKILL.md"
+            )
+            self.assertTrue(canonical_skill.is_file())
+            self.assertTrue(codex_adapter.is_file())
+            self.assertTrue(claude_adapter.is_file())
+            installed_skill = canonical_skill.read_text(encoding="utf-8")
+            self.assertIn("Optional hosted-platform review", installed_skill)
+            self.assertIn("GitLab", installed_skill)
+            self.assertIn("Bitbucket", installed_skill)
+            self.assertIn("Azure Repos", installed_skill)
+            self.assertIn("mandatory, but it is not the entire response", installed_skill)
+            description = next(
+                line for line in installed_skill.splitlines() if line.startswith("description:")
+            )
+            self.assertLessEqual(len(description.removeprefix("description: ").split()), 20)
+            for adapter in (codex_adapter, claude_adapter):
+                adapter_description = next(
+                    line
+                    for line in adapter.read_text(encoding="utf-8").splitlines()
+                    if line.startswith("description:")
+                )
+                self.assertEqual(description, adapter_description)
 
     def test_installation_documentation_describes_both_installation_paths(self) -> None:
         readme = (REPOSITORY_ROOT / "README.md").read_text(encoding="utf-8")

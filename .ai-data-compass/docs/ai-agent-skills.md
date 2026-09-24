@@ -21,8 +21,9 @@ Claude Code discovers project skills under `.claude/skills/<skill-name>/SKILL.md
 1. Add the skill's canonical files under `.ai-data-compass/skills/<directory>/`, including its scoped `LICENSE` and `THIRD-PARTY-NOTICES.md`.
 2. Add one entry to `src/ai_data_compass/skill_catalog.json` with the CLI asset name, canonical directory, and interactive menu description.
 3. Add Codex and Claude projections under `.agents/skills/<directory>/` and `.claude/skills/<directory>/`. Keep them as thin pointers to the canonical skill.
-4. Keep skill instructions, comments, and documentation in English.
-5. Add deterministic tests using synthetic fixtures only, then run the canonical and projection tests.
+4. Write the frontmatter `description` as a short, single-sentence summary of the skill's main task and intended trigger. Keep workflow details and constraints in the body.
+5. Keep skill instructions, comments, and documentation in English.
+6. Add deterministic tests using synthetic fixtures only, then run the canonical and projection tests.
 
 The catalog drives CLI selection and package inclusion. Adding a catalog entry does not generate the canonical files or host projections; those files must also be present in the repository.
 

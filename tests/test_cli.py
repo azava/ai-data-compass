@@ -430,6 +430,15 @@ class CliTests(unittest.TestCase):
             self.assertTrue(
                 (target / ".ai-data-compass" / "skills" / "security-audit" / "SKILL.md").is_file()
             )
+            self.assertTrue(
+                (
+                    target
+                    / ".ai-data-compass"
+                    / "skills"
+                    / "project-review"
+                    / "SKILL.md"
+                ).is_file()
+            )
             self.assertFalse((target / "AGENTS.md").exists())
 
     def test_init_accepts_complete_asset(self) -> None:
@@ -445,7 +454,10 @@ class CliTests(unittest.TestCase):
             manifest = json.loads(
                 (target / ".ai-data-compass" / "manifest.json").read_text(encoding="utf-8")
             )
-            self.assertEqual(manifest["assets"], ["base", "agents.md", "security_audit"])
+            self.assertEqual(
+                manifest["assets"],
+                ["base", "agents.md", "project_review", "security_audit"],
+            )
 
     def test_agents_only_selection_does_not_install_skill_license_or_notice(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -874,7 +886,10 @@ class CliTests(unittest.TestCase):
             manifest = json.loads(
                 (target / ".ai-data-compass" / "manifest.json").read_text(encoding="utf-8")
             )
-            self.assertEqual(manifest["assets"], ["base", "agents.md", "security_audit"])
+            self.assertEqual(
+                manifest["assets"],
+                ["base", "agents.md", "project_review", "security_audit"],
+            )
 
     def test_init_rejects_nonexistent_target(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -1003,9 +1018,11 @@ class CliTests(unittest.TestCase):
             ["agents.md", "security_audit"],
             normalize_assets(["agents.md, security-audit"]),
         )
-        self.assertEqual(["security_audit"], normalize_assets(["skills"]))
         self.assertEqual(
-            ["agents.md", "security_audit"],
+            ["project_review", "security_audit"], normalize_assets(["skills"])
+        )
+        self.assertEqual(
+            ["agents.md", "project_review", "security_audit"],
             normalize_assets(["complete"]),
         )
 
