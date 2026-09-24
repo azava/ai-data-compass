@@ -13,7 +13,7 @@ This document contains additional testing procedures for the rules in `AGENTS.md
 
 `PYTHONPATH=src python -m unittest discover -s tests -q -b`
 
-- The GitHub Actions test workflow runs the suite on Python 3.9 through 3.13 for pull requests, pushes to `main`, and manual dispatches.
+- The GitHub Actions test workflow runs the suite on Python 3.9 through 3.13 for pull requests only. Require all five Python matrix checks and the security audit check before merging a pull request.
 
 - `bash .ai-data-compass/skills/security-audit/tests/test_security_surface.sh`
 - `bash .ai-data-compass/skills/security-audit/tests/test_claude_projection.sh`
