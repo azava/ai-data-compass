@@ -19,6 +19,22 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 
 
 class DistributionTests(unittest.TestCase):
+    def _run_link_checker(self, root: Path, script: Path | None = None) -> subprocess.CompletedProcess[str]:
+        checker = script or (
+            REPOSITORY_ROOT
+            / ".ai-data-compass"
+            / "skills"
+            / "documentation-validation"
+            / "scripts"
+            / "check_links.py"
+        )
+        return subprocess.run(
+            [sys.executable, str(checker), "--root", str(root)],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+
     def _project_requires_python(self) -> str:
         pyproject = (REPOSITORY_ROOT / "pyproject.toml").read_text(encoding="utf-8")
         match = re.search(r'(?m)^requires-python\s*=\s*"([^"]+)"$', pyproject)
@@ -26,27 +42,31 @@ class DistributionTests(unittest.TestCase):
         assert match is not None
         return match.group(1)
 
-    def _assert_markdown_links_resolve(self, root: Path, paths: list[Path]) -> None:
-        link_pattern = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
-        for document in paths:
-            content = document.read_text(encoding="utf-8")
-            for link in link_pattern.findall(content):
-                if link.startswith(("http://", "https://", "mailto:", "#")):
-                    continue
-                target = (document.parent / link.split("#", 1)[0]).resolve()
-                with self.subTest(document=document, link=link):
-                    self.assertTrue(target.is_file(), target)
-
     def test_repository_markdown_links_resolve(self) -> None:
-        extensions = {".md", ".mdc", ".mdx", ".rst"}
-        documents = [
-            path
-            for path in REPOSITORY_ROOT.rglob("*")
-            if path.is_file()
-            and path.suffix.lower() in extensions
-            and ".git" not in path.parts
-        ]
-        self._assert_markdown_links_resolve(REPOSITORY_ROOT, documents)
+        result = self._run_link_checker(REPOSITORY_ROOT)
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+
+    def test_markdown_link_validation_checks_local_sections(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            document = root / "guide.md"
+            target = root / "reference.md"
+            document.write_text(
+                "[file](reference.md)\n[section](reference.md#quick-start)\n"
+                "[duplicate heading](reference.md#quick-start-1)\n"
+                "[external](https://example.invalid/docs)\n"
+                "[missing file](absent.md)\n[missing section](reference.md#absent)\n",
+                encoding="utf-8",
+            )
+            target.write_text("# Quick Start\n# Quick Start\n", encoding="utf-8")
+
+            result = self._run_link_checker(root)
+            self.assertEqual(1, result.returncode)
+            self.assertEqual(
+                "guide.md:5: missing local target\nguide.md:6: missing target section\n",
+                result.stdout,
+            )
+            self.assertNotIn("missing file", result.stdout)
 
     def test_installed_documentation_links_resolve(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -61,23 +81,22 @@ class DistributionTests(unittest.TestCase):
                     "init",
                     str(target),
                     "--assets",
-                    "agents.md,security_audit,project_review",
+                    "agents.md,security_audit,project_review,documentation_validation",
                 ],
                 check=True,
                 capture_output=True,
                 text=True,
             )
-            documents = [target / "AGENTS.md"]
-            documents.extend((target / ".ai-data-compass" / "docs").glob("*.md"))
-            documents.extend(
-                [
-                    target / "CLAUDE.md",
-                    target / "GEMINI.md",
-                    target / ".cursor" / "rules" / "agents.mdc",
-                    target / ".github" / "copilot-instructions.md",
-                ]
+            link_checker = (
+                target
+                / ".ai-data-compass"
+                / "skills"
+                / "documentation-validation"
+                / "scripts"
+                / "check_links.py"
             )
-            self._assert_markdown_links_resolve(target, documents)
+            result = self._run_link_checker(target, link_checker)
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
             canonical_skill = (
                 target
                 / ".ai-data-compass"
@@ -105,6 +124,78 @@ class DistributionTests(unittest.TestCase):
             )
             self.assertLessEqual(len(description.removeprefix("description: ").split()), 20)
             for adapter in (codex_adapter, claude_adapter):
+                adapter_description = next(
+                    line
+                    for line in adapter.read_text(encoding="utf-8").splitlines()
+                    if line.startswith("description:")
+                )
+                self.assertEqual(description, adapter_description)
+
+    def test_documentation_validation_asset_installs_all_three_skills(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            subprocess.run(
+                [
+                    sys.executable,
+                    "-c",
+                    "import sys; sys.path.insert(0, sys.argv[1]); from ai_data_compass.cli import main; raise SystemExit(main(sys.argv[2:]))",
+                    str(REPOSITORY_ROOT / "src"),
+                    "init",
+                    str(target),
+                    "--assets",
+                    "agents.md,documentation_validation",
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+
+            skill_root = target / ".ai-data-compass" / "skills" / "documentation-validation"
+            expected_skills = [
+                skill_root / "SKILL.md",
+                skill_root / "subskills" / "documentation-links" / "SKILL.md",
+                skill_root / "subskills" / "documentation-accuracy" / "SKILL.md",
+            ]
+            for skill in expected_skills:
+                self.assertTrue(skill.is_file(), skill)
+            checker = skill_root / "scripts" / "check_links.py"
+            self.assertTrue(checker.is_file(), checker)
+            checker_result = self._run_link_checker(target, checker)
+            self.assertEqual(0, checker_result.returncode, checker_result.stdout + checker_result.stderr)
+            main_skill = expected_skills[0].read_text(encoding="utf-8")
+            self.assertIn("subskills/documentation-links/SKILL.md", main_skill)
+            self.assertIn("subskills/documentation-accuracy/SKILL.md", main_skill)
+            self.assertTrue(
+                (target / ".agents" / "skills" / "documentation-validation" / "SKILL.md").is_file()
+            )
+            self.assertTrue(
+                (target / ".claude" / "skills" / "documentation-validation" / "SKILL.md").is_file()
+            )
+            instructions = (target / "AGENTS.md").read_text(encoding="utf-8")
+            self.assertIn("documentation-validation procedure configured", instructions)
+            self.assertIn(
+                "collision name formed with the `documentation-validation` prefix and `-ai-data-compass` suffix",
+                instructions,
+            )
+            manifest = json.loads(
+                (target / ".ai-data-compass" / "manifest.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(
+                manifest["assets"],
+                ["base", "agents.md", "documentation_validation"],
+            )
+            self.assertIn(
+                "documentation_validation",
+                {entry["asset"] for entry in manifest["licenses"]},
+            )
+            description = next(
+                line for line in main_skill.splitlines() if line.startswith("description:")
+            )
+            self.assertLessEqual(len(description.removeprefix("description: ").split()), 20)
+            for adapter in (
+                target / ".agents" / "skills" / "documentation-validation" / "SKILL.md",
+                target / ".claude" / "skills" / "documentation-validation" / "SKILL.md",
+            ):
                 adapter_description = next(
                     line
                     for line in adapter.read_text(encoding="utf-8").splitlines()
@@ -157,6 +248,14 @@ class DistributionTests(unittest.TestCase):
         self.assertIn("base asset", base_license)
         self.assertIn("only to the files distributed as part", skill_license)
         self.assertIn("`security_audit` skill", skill_license)
+        documentation_license = (
+            REPOSITORY_ROOT
+            / ".ai-data-compass"
+            / "skills"
+            / "documentation-validation"
+            / "LICENSE"
+        ).read_text(encoding="utf-8")
+        self.assertIn("`documentation_validation` skill asset", documentation_license)
 
         distribution = (
             REPOSITORY_ROOT / ".ai-data-compass" / "docs" / "distribution.md"

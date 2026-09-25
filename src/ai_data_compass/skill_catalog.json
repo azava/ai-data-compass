@@ -8,5 +8,10 @@
     "asset": "project_review",
     "directory": "project-review",
     "description": "Read-only senior review of a complete repository"
+  },
+  {
+    "asset": "documentation_validation",
+    "directory": "documentation-validation",
+    "description": "Run documentation link and accuracy reviews"
   }
 ]
