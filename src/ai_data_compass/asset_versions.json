@@ -266,6 +266,32 @@
           ]
         },
         {
+          "name": "data_quality_testing",
+          "version": "0.0.1",
+          "files": [
+            {
+              "path": ".agents/skills/data-quality-testing/SKILL.md",
+              "sha256": "ab9c1b5475c55180cec15981bd0d479ee2acab5768d1780ee781bae8fc1bd960"
+            },
+            {
+              "path": ".ai-data-compass/skills/data-quality-testing/LICENSE",
+              "sha256": "8226feaaadb417a32c5a16029097ebd62f3b493d3c56622b882e3adf71a5d949"
+            },
+            {
+              "path": ".ai-data-compass/skills/data-quality-testing/SKILL.md",
+              "sha256": "364c88089942a2d50c951b36b4cda888c135ec9edf8734d170c24f3d70c1ab94"
+            },
+            {
+              "path": ".ai-data-compass/skills/data-quality-testing/THIRD-PARTY-NOTICES.md",
+              "sha256": "99c96f3ad406a1061c4f17c687c0bacd276cf4ed15cebd4f8af1721b860a0731"
+            },
+            {
+              "path": ".claude/skills/data-quality-testing/SKILL.md",
+              "sha256": "ab9c1b5475c55180cec15981bd0d479ee2acab5768d1780ee781bae8fc1bd960"
+            }
+          ]
+        },
+        {
           "name": "documentation_validation",
           "version": "0.0.2",
           "files": [
