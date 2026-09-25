@@ -460,6 +460,7 @@ class CliTests(unittest.TestCase):
                     "base",
                     "agents.md",
                     "before_consider_done",
+                    "data_quality_testing",
                     "documentation_validation",
                     "project_review",
                     "security_audit",
@@ -900,6 +901,7 @@ class CliTests(unittest.TestCase):
                     "base",
                     "agents.md",
                     "before_consider_done",
+                    "data_quality_testing",
                     "documentation_validation",
                     "project_review",
                     "security_audit",
@@ -1037,6 +1039,7 @@ class CliTests(unittest.TestCase):
         self.assertEqual(
             [
                 "before_consider_done",
+                "data_quality_testing",
                 "documentation_validation",
                 "project_review",
                 "security_audit",
@@ -1048,6 +1051,7 @@ class CliTests(unittest.TestCase):
             [
                 "agents.md",
                 "before_consider_done",
+                "data_quality_testing",
                 "documentation_validation",
                 "project_review",
                 "security_audit",

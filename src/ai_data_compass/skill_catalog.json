@@ -5,6 +5,11 @@
     "description": "Run validation before considering a task done"
   },
   {
+    "asset": "data_quality_testing",
+    "directory": "data-quality-testing",
+    "description": "Plan tests for data quality and business rules"
+  },
+  {
     "asset": "security_audit",
     "directory": "security-audit",
     "description": "Security audit skill and host adapters"
