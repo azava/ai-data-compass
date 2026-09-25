@@ -1,11 +1,10 @@
-# AI Data Compass Project Procedures
+# Project Procedures
 
-This directory contains additional detail for the procedures referenced by `AGENTS.md`. The general rules remain in `AGENTS.md`; these documents should not duplicate them.
+This directory contains additional detail for procedures referenced by `AGENTS.md`. The general rules remain in `AGENTS.md`; these documents should not duplicate them.
 
 ## Procedure files
 
 - [Distribution](distribution.md)
-- [Asset Versioning](asset-versioning.md)
 - [Security and Privacy](security-and-privacy.md)
 - [Communication and Documentation](communication-and-documentation.md)
 - [Development Patterns](development-patterns.md)
@@ -14,4 +13,3 @@ This directory contains additional detail for the procedures referenced by `AGEN
 - [Project Documentation](project-documentation.md)
 - [Repository Quality and Metadata Metrics](repository-quality-and-metadata-metrics.md)
 - [Task Completion](task-completion.md)
-- [AI Agent Skills](ai-agent-skills.md)

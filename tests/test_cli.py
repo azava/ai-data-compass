@@ -92,7 +92,7 @@ class CliTests(unittest.TestCase):
             self.assertEqual(1, len(instruction_lines))
             self.assertIn("@AGENTS-ai-data-compass.md", (target / "CLAUDE.md").read_text())
             for document in [
-                "README.md", "ai-agent-skills.md", "tests.md", "security-and-privacy.md"
+                "README.md", "distribution.md", "security-and-privacy.md"
             ]:
                 contents = (
                     target / ".ai-data-compass" / "docs" / document
@@ -115,7 +115,7 @@ class CliTests(unittest.TestCase):
             skill_result = install_assets(target, ["security_audit"], root=source_root)
             self.assertEqual("installed", skill_result.outcomes[0].status)
             combined_docs = (
-                target / ".ai-data-compass/docs/tests.md"
+                target / ".ai-data-compass/docs/distribution.md"
             ).read_text(encoding="utf-8")
             self.assertIn("AGENTS-ai-data-compass.md", combined_docs)
             self.assertIn("security-audit-ai-data-compass", combined_docs)
@@ -211,7 +211,7 @@ class CliTests(unittest.TestCase):
             self.assertIn(f"[{resolved}]({resolved})", (target / "AGENTS.md").read_text())
             self.assertIn(f"@{resolved}", (target / "CLAUDE.md").read_text())
             for document in [
-                "README.md", "ai-agent-skills.md", "tests.md", "security-and-privacy.md"
+                "README.md", "distribution.md", "security-and-privacy.md"
             ]:
                 content = (target / ".ai-data-compass/docs" / document).read_text()
                 self.assertIn(resolved, content)
@@ -587,7 +587,7 @@ class CliTests(unittest.TestCase):
             target = Path(directory)
             source_root = Path(__file__).resolve().parents[1]
             install_assets(target, ["agents.md"], root=source_root)
-            document = target / ".ai-data-compass/docs/tests.md"
+            document = target / ".ai-data-compass/docs/distribution.md"
             original_manifest = (target / ".ai-data-compass/manifest.json").read_bytes()
             occupied = target / ".ai-data-compass/skills/security-audit/SKILL.md"
             occupied.parent.mkdir(parents=True)
@@ -746,7 +746,7 @@ class CliTests(unittest.TestCase):
             occupied = target / ".ai-data-compass/skills/security-audit/SKILL.md"
             occupied.parent.mkdir(parents=True)
             occupied.write_text("adopter-owned skill", encoding="utf-8")
-            source_doc = source_root / ".ai-data-compass/docs/tests.md"
+            source_doc = source_root / ".ai-data-compass/docs/distribution.md"
             original_doc = source_doc.read_bytes()
 
             result = install_assets(target, ["security_audit"], root=source_root)
@@ -767,7 +767,7 @@ class CliTests(unittest.TestCase):
                     encoding="utf-8"
                 ),
             )
-            rendered_doc = (target / ".ai-data-compass/docs/tests.md").read_text(
+            rendered_doc = (target / ".ai-data-compass/docs/distribution.md").read_text(
                 encoding="utf-8"
             )
             self.assertIn(f".ai-data-compass/skills/{resolved_name}/", rendered_doc)
@@ -799,7 +799,7 @@ class CliTests(unittest.TestCase):
             target = Path(directory)
             source_root = Path(__file__).resolve().parents[1]
             install_assets(target, ["agents.md"], root=source_root)
-            existing_doc = target / ".ai-data-compass/docs/tests.md"
+            existing_doc = target / ".ai-data-compass/docs/distribution.md"
             canonical_path = target / ".ai-data-compass/skills/security-audit/SKILL.md"
             canonical_path.parent.mkdir(parents=True)
             canonical_path.write_text("adopter-owned skill", encoding="utf-8")
@@ -823,7 +823,7 @@ class CliTests(unittest.TestCase):
             target = Path(directory)
             source_root = Path(__file__).resolve().parents[1]
             install_assets(target, ["agents.md"], root=source_root)
-            doc = target / ".ai-data-compass/docs/ai-agent-skills.md"
+            doc = target / ".ai-data-compass/docs/distribution.md"
             doc.write_text("adopter-modified documentation", encoding="utf-8")
             occupied = target / ".ai-data-compass/skills/security-audit/SKILL.md"
             occupied.parent.mkdir(parents=True)
