@@ -39,6 +39,3 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 ai_data_compass = ["skill_catalog.json", "asset_versions.json"]
-
-[tool.ai-data-compass.release]
-testpypi-base-version = "0.0.2"
