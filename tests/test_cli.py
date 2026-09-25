@@ -462,11 +462,51 @@ class CliTests(unittest.TestCase):
                     "before_consider_done",
                     "data_quality_testing",
                     "documentation_validation",
+                    "project_quality_metrics",
                     "project_review",
                     "security_audit",
                     "test_gap_review",
                 ],
             )
+
+    def test_init_accepts_project_quality_metrics_asset(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            exit_code = main(
+                ["init", str(target), "--assets", "project_quality_metrics"]
+            )
+
+            self.assertEqual(exit_code, 0)
+            canonical = (
+                target
+                / ".ai-data-compass"
+                / "skills"
+                / "project-quality-metrics"
+            )
+            self.assertTrue((canonical / "SKILL.md").is_file())
+            self.assertTrue((canonical / "references" / "metric-history.md").is_file())
+            self.assertTrue((canonical / "LICENSE").is_file())
+            self.assertTrue((canonical / "THIRD-PARTY-NOTICES.md").is_file())
+            for host in (".agents", ".claude"):
+                adapter = (
+                    target
+                    / host
+                    / "skills"
+                    / "project-quality-metrics"
+                    / "SKILL.md"
+                )
+                self.assertTrue(adapter.is_file(), adapter)
+                self.assertIn(
+                    "../../../.ai-data-compass/skills/project-quality-metrics/SKILL.md",
+                    adapter.read_text(encoding="utf-8"),
+                )
+
+            manifest = json.loads(
+                (target / ".ai-data-compass" / "manifest.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            self.assertEqual(manifest["assets"], ["base", "project_quality_metrics"])
 
     def test_agents_only_selection_does_not_install_skill_license_or_notice(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -903,6 +943,7 @@ class CliTests(unittest.TestCase):
                     "before_consider_done",
                     "data_quality_testing",
                     "documentation_validation",
+                    "project_quality_metrics",
                     "project_review",
                     "security_audit",
                     "test_gap_review",
@@ -1041,6 +1082,7 @@ class CliTests(unittest.TestCase):
                 "before_consider_done",
                 "data_quality_testing",
                 "documentation_validation",
+                "project_quality_metrics",
                 "project_review",
                 "security_audit",
                 "test_gap_review",
@@ -1053,6 +1095,7 @@ class CliTests(unittest.TestCase):
                 "before_consider_done",
                 "data_quality_testing",
                 "documentation_validation",
+                "project_quality_metrics",
                 "project_review",
                 "security_audit",
                 "test_gap_review",

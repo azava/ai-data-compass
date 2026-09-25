@@ -1,6 +1,6 @@
 ---
 name: test-gap-review
-description: Find missing behavior and regression tests in a repository or selected changes.
+description: Find and address gaps in behavior and regression tests.
 ---
 
 # Test Gap Review
@@ -20,10 +20,9 @@ This skill covers unit, integration, end-to-end, contract, and other code-behavi
 
 - Review relevant code, existing tests, test configuration, and documented bugs or known limitations.
 - For each meaningful behavior or bug scenario, assess whether tests are absent, partial, or adequate. Consider expected behavior, important boundaries, failures, and documented regressions.
-- Treat line or branch coverage as supporting evidence; percentages alone do not establish meaningful behavioral coverage.
-- Use confidence labels when evidence is incomplete, and distinguish hard-to-exercise behavior from a genuine test gap.
+- Examine assertions and expected outcomes, not just whether a test executes the code. Check whether mocks hide the behavior under review. Treat line or branch coverage as supporting evidence; percentages alone do not establish meaningful behavioral coverage.
+- Use confidence labels when evidence is incomplete. Record test presence and execution status separately: an unavailable environment does not establish that tests are missing or inadequate.
 - Respect project privacy rules. Do not inspect sensitive data values; use synthetic or sanitized fixtures.
-- Keep the scope on code behavior. Do not expand into data validation, quality metrics, metadata, deployment, or infrastructure checks.
 
 Present a concise map with evidence, then recommend three useful starting areas tailored to the findings. For example, suggest high-impact behavior with partial coverage, a documented bug without a regression test, or behavior affected by selected changes. Briefly explain each suggestion and let the user choose one or name another area.
 
@@ -31,24 +30,23 @@ Present a concise map with evidence, then recommend three useful starting areas 
 
 For the selected area:
 
-- Propose concrete test scenarios and appropriate test levels using project conventions.
+- Propose concrete test scenarios and appropriate test levels using project conventions. Include the coverage record in the round's scope.
 - Discuss the proposal with the user and adjust it until the target behavior is clear.
 - Implement only the agreed tests, following existing patterns and native tools.
 - Do not change production behavior just because a test exposes a bug. Report the evidence and ask how the user wants to proceed unless the requested scope already authorizes the fix.
-- Run relevant native tests when the user requested implementation or execution and the environment permits it.
-- Report exact commands and outcomes; distinguish passed, failed, skipped, and unavailable checks. Do not claim unverified coverage, and separate unrelated failures from this round.
+- Run relevant native tests when the user requested implementation or execution and the environment permits it. For a regression test with an available fix, verify when practical that it fails before the fix and passes after it, using an isolated setup that preserves the user's work. If that comparison cannot be performed, report the limitation.
+- Report which tests already existed, which were added, and which were executed, with exact commands and outcomes. Distinguish passed, failed, skipped, and unavailable checks; do not describe unexecuted tests as passing. Separate unrelated failures from this round.
 
 ## Record the reviewed coverage
 
 When the user accepts a round as complete, check whether the repository already maintains a record of test coverage or known test gaps.
 
-- If a suitable record exists, update it only when the user authorized documentation changes and the new state warrants an update.
-- If no suitable record exists, suggest a concise Markdown record in the project's documentation location and ask before creating it.
-- Record the review date or revision, scope, behaviors assessed, test evidence, remaining gaps, and deferred work. Percentages alone are insufficient.
+- Update a suitable existing record or create a concise Markdown record in the project's documentation location when included in the authorized round. Do not request confirmation again for documentation work already authorized; propose it if it remains outside the agreed scope.
+- Record the review date or revision, scope, behaviors assessed, existing and added tests, execution evidence and limitations, remaining gaps, and deferred work. Percentages alone are insufficient.
 - On later runs, use the record to guide discovery, but repeat the current inspection of technologies, code, tests, and documented bugs. Do not treat the record as authoritative or current.
 
 ## Continue or finish
 
 - After each completed round, ask whether the user wants another. It may address a different area or continue the same area with different behavior or test levels.
-- Repeat the mapping and agreement process for each round, keeping the work focused.
+- Within the same execution, refresh the map for the selected area and effects of the changes, then agree on the next round. Repeat broader discovery only when scope changes or new evidence warrants it; on a new execution, recheck the current repository state.
 - When the user decides to stop, summarize reviewed and implemented areas, commands and results, remaining gaps, and limitations or follow-up decisions. Do not continue without the user's choice.
