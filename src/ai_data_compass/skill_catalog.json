@@ -1,5 +1,10 @@
 [
   {
+    "asset": "before_consider_done",
+    "directory": "before-consider-done",
+    "description": "Run validation before considering a task done"
+  },
+  {
     "asset": "security_audit",
     "directory": "security-audit",
     "description": "Security audit skill and host adapters"

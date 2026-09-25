@@ -133,6 +133,8 @@ For more details, see [Repository Quality and Metadata Metrics](.ai-data-compass
 
 ## 8. Before Considering a Task Done
 
+If the `before-consider-done` skill is installed, use it to carry out this checklist. If it is unavailable, follow the checklist directly.
+
 Use the task-completion procedure configured for the current project first. The rules below are fallback guidance and should not contradict it. Project-specific procedures take precedence over AI Data Compass defaults. If no local procedure exists, use `.ai-data-compass/docs/task-completion.md`. If a required capability is unavailable, report it and require review rather than silently skipping it.
 
 - Run all applicable repository tests, assertions, validations, and similar checks.
