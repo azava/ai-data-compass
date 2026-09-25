@@ -18,5 +18,10 @@
     "asset": "documentation_validation",
     "directory": "documentation-validation",
     "description": "Run documentation link and accuracy reviews"
+  },
+  {
+    "asset": "test_gap_review",
+    "directory": "test-gap-review",
+    "description": "Find missing behavior and regression tests"
   }
 ]

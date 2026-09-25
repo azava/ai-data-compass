@@ -382,6 +382,32 @@
               "sha256": "9c7095fa10f2b81cc78c94e0b79aa93776dfe991662ecaa5ea51f566d3b3f663"
             }
           ]
+        },
+        {
+          "name": "test_gap_review",
+          "version": "0.0.1",
+          "files": [
+            {
+              "path": ".agents/skills/test-gap-review/SKILL.md",
+              "sha256": "e3d99a7f19aad25dcd314510fefb495429296d55b4a925c4008d2b607db469cc"
+            },
+            {
+              "path": ".ai-data-compass/skills/test-gap-review/LICENSE",
+              "sha256": "102bb631a46756eb26e9e58aef6be75addb777227e32ec97deea2726311f9091"
+            },
+            {
+              "path": ".ai-data-compass/skills/test-gap-review/SKILL.md",
+              "sha256": "9b93139450f8421a90f87b1953f3ae298a6828f2f156e38fab37f869cf76dced"
+            },
+            {
+              "path": ".ai-data-compass/skills/test-gap-review/THIRD-PARTY-NOTICES.md",
+              "sha256": "876effaeb5bad0550d202e690522eba20f0d73a6cc5605b7ee59f3a455c47952"
+            },
+            {
+              "path": ".claude/skills/test-gap-review/SKILL.md",
+              "sha256": "e3d99a7f19aad25dcd314510fefb495429296d55b4a925c4008d2b607db469cc"
+            }
+          ]
         }
       ]
     }

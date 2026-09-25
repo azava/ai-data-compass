@@ -42,9 +42,13 @@ ai-data-compass init
 
 When the installer asks what to add, the developer chooses `complete` to get the agent guidance and all available skills. If an existing `AGENTS.md` has different content, the installer asks before adding a reference, and the developer types `y` to agree.
 
-With setup finished, the developer asks the coding agent to use `project-review` to examine the repository and report concrete findings. They review the results and fix the issues they decide to address.
+From then on, the agent follows the AI Data Compass guidance in `AGENTS.md`, improving communication, code quality, documentation, and security throughout its work.
 
-Once those changes are ready, the developer invokes `before-consider-done` skill to follow the repository's completion procedure. It checks applicable tests and configured metrics, uses `documentation-validation` and `security-audit`  skills for their respective reviews, and reports anything skipped or unavailable.
+With those guidelines in place, the developer asks the coding agent to use `project-review` to examine the repository and report concrete findings. They review the results and fix the issues they decide to address.
+
+After the review, the developer invokes the `test-gap-review` skill to map behaviors and documented bugs that lack meaningful tests. The skill offers three places to start, and the developer chooses one area to work through with the agent using the project's native test tools.
+
+Once those changes are ready, the developer invokes the `before-consider-done` skill to follow the repository's completion procedure. It checks applicable tests and configured metrics, uses the `documentation-validation` and `security-audit` skills for their respective reviews, and reports anything skipped or unavailable.
 
 ## Available assets
 
@@ -55,6 +59,7 @@ Once those changes are ready, the developer invokes `before-consider-done` skill
 | `project_review` | Read-only senior review of a complete repository, with an optional hosted-repository review. | Ask your agent to run the `project-review` skill; hosted review requires your approval to access the repository platform. |
 | `documentation_validation` | Runs the documentation link and accuracy reviews together. | Ask your agent to run the `documentation-validation` skill. |
 | `security_audit` | Security-audit skill with its scanner, references, tests, and Codex and Claude adapters. | Ask your agent to run the `security-audit` skill and review its metadata-only findings. |
+| `test_gap_review` | Maps missing behavioral and regression tests and guides focused test-writing rounds. | Ask your agent to run the `test-gap-review` skill on the repository or selected changes. |
 
 ## Documentation
 

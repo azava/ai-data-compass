@@ -456,7 +456,15 @@ class CliTests(unittest.TestCase):
             )
             self.assertEqual(
                 manifest["assets"],
-                ["base", "agents.md", "before_consider_done", "documentation_validation", "project_review", "security_audit"],
+                [
+                    "base",
+                    "agents.md",
+                    "before_consider_done",
+                    "documentation_validation",
+                    "project_review",
+                    "security_audit",
+                    "test_gap_review",
+                ],
             )
 
     def test_agents_only_selection_does_not_install_skill_license_or_notice(self) -> None:
@@ -888,7 +896,15 @@ class CliTests(unittest.TestCase):
             )
             self.assertEqual(
                 manifest["assets"],
-                ["base", "agents.md", "before_consider_done", "documentation_validation", "project_review", "security_audit"],
+                [
+                    "base",
+                    "agents.md",
+                    "before_consider_done",
+                    "documentation_validation",
+                    "project_review",
+                    "security_audit",
+                    "test_gap_review",
+                ],
             )
 
     def test_init_rejects_nonexistent_target(self) -> None:
@@ -1019,11 +1035,24 @@ class CliTests(unittest.TestCase):
             normalize_assets(["agents.md, security-audit"]),
         )
         self.assertEqual(
-            ["before_consider_done", "documentation_validation", "project_review", "security_audit"],
+            [
+                "before_consider_done",
+                "documentation_validation",
+                "project_review",
+                "security_audit",
+                "test_gap_review",
+            ],
             normalize_assets(["skills"]),
         )
         self.assertEqual(
-            ["agents.md", "before_consider_done", "documentation_validation", "project_review", "security_audit"],
+            [
+                "agents.md",
+                "before_consider_done",
+                "documentation_validation",
+                "project_review",
+                "security_audit",
+                "test_gap_review",
+            ],
             normalize_assets(["complete"]),
         )
 
