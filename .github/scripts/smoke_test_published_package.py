@@ -5,12 +5,12 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import shutil
 import subprocess
 import sys
 import tempfile
 import time
-import tomllib
 import venv
 from pathlib import Path
 
@@ -19,21 +19,46 @@ INSTALL_ATTEMPTS = 7
 RETRY_DELAYS_SECONDS = (5, 10, 20, 30, 30, 30)
 
 
-def project_contract(project_file: Path) -> tuple[str, str, str]:
-    with project_file.open("rb") as file:
-        project = tomllib.load(file)["project"]
+def toml_section(contents: str, name: str) -> str:
+    heading = f"[{name}]"
+    lines = contents.splitlines()
+    try:
+        start = lines.index(heading) + 1
+    except ValueError as error:
+        raise SystemExit(f"Could not find [{name}] in pyproject.toml") from error
+    end = next(
+        (index for index in range(start, len(lines)) if lines[index].startswith("[")),
+        len(lines),
+    )
+    return "\n".join(lines[start:end])
 
-    distribution = project["name"]
+
+def toml_string(section: str, key: str) -> str:
+    match = re.search(
+        rf"(?m)^{re.escape(key)}\s*=\s*\"([^\"]+)\"\s*(?:#.*)?$", section
+    )
+    if not match:
+        raise SystemExit(f"Could not find a string value for {key!r} in pyproject.toml")
+    return match.group(1)
+
+
+def project_contract(project_file: Path) -> tuple[str, str, str, str]:
+    contents = project_file.read_text(encoding="utf-8")
+    project = toml_section(contents, "project")
+    scripts = toml_section(contents, "project.scripts")
+    distribution = toml_string(project, "name")
+    version = toml_string(project, "version")
     command = distribution.replace("_", "-")
-    entry_point = project.get("scripts", {}).get(command)
-    if not entry_point:
+    try:
+        entry_point = toml_string(scripts, command)
+    except SystemExit:
         raise SystemExit(
             f"Expected a console script named {command!r} in project.scripts"
-        )
+        ) from None
     module = entry_point.partition(":")[0]
     if not module:
         raise SystemExit(f"Could not determine the import module for {command!r}")
-    return distribution, command, module
+    return distribution, command, module, version
 
 
 def run(command: list[str], *, env: dict[str, str], cwd: Path) -> subprocess.CompletedProcess[str]:
@@ -112,11 +137,8 @@ def main() -> int:
             parser.error("--index-url is required unless --local is used")
 
     project_file = Path(__file__).resolve().parents[2] / "pyproject.toml"
-    distribution, cli_command, module = project_contract(project_file)
+    distribution, cli_command, module, expected_version = project_contract(project_file)
     if args.local:
-        expected_version = tomllib.loads(
-            project_file.read_text(encoding="utf-8")
-        )["project"]["version"]
         source_directory = project_file.parent / "src"
         local_env = os.environ.copy()
         local_env.pop("PYTHONHOME", None)
