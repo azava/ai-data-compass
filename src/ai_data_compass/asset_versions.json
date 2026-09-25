@@ -173,7 +173,7 @@
             },
             {
               "path": "AGENTS.md",
-              "sha256": "c299fdfe825eff79ac57c2f7115fe6a8508debc45c356e777c85a9b6423d3473"
+              "sha256": "171bc42597ae41b4eef9efa69f2a24f4faef469e791ca3d915c1cad133527ec5"
             },
             {
               "path": "CLAUDE.md",
@@ -199,15 +199,7 @@
             },
             {
               "path": ".ai-data-compass/docs/README.md",
-              "sha256": "6ca73ee043caf6d6b1e8c48916ad6946958bbb7fec85715a611643bb3a898599"
-            },
-            {
-              "path": ".ai-data-compass/docs/ai-agent-skills.md",
-              "sha256": "662716a2a6a9161d70c229ec5568a25625a8fe8a3daf2489a5100fe8aee6275a"
-            },
-            {
-              "path": ".ai-data-compass/docs/asset-versioning.md",
-              "sha256": "55c3498420cfbaee90b7e0b31492772e5197bfb41423c62dbadadb285a7d2d62"
+              "sha256": "0f3712704538ae948965cbb85cdd41c933f8c3d74cfa73d2fd66a1ed7ba370f9"
             },
             {
               "path": ".ai-data-compass/docs/communication-and-documentation.md",
@@ -219,7 +211,7 @@
             },
             {
               "path": ".ai-data-compass/docs/distribution.md",
-              "sha256": "eb25f3e4bce6f6cd2398e8be2714ba92d888a05489582b40cffd4174df5db009"
+              "sha256": "7e7615ae2a3adf22cd7eadd85a73393fd52de9f943370940e12c7f8a8d35a827"
             },
             {
               "path": ".ai-data-compass/docs/project-documentation.md",
@@ -235,7 +227,7 @@
             },
             {
               "path": ".ai-data-compass/docs/security-and-privacy.md",
-              "sha256": "9bb17edff3537cc668a46d9888ad0f10fae703907fceb1ab459b8d13be4a3422"
+              "sha256": "8f97b598fef3f9c98a2ca1477c1e23028da59d3caa414fd611d9b016a285a751"
             },
             {
               "path": ".ai-data-compass/docs/task-completion.md",
@@ -243,13 +235,13 @@
             },
             {
               "path": ".ai-data-compass/docs/tests.md",
-              "sha256": "85cd059dbc29f9e01c60b12ad07a1c32c3d32be437d09e2ead5a838abe571c4c"
+              "sha256": "d1e0b55d0a65849b3d41df3801db39b33acb98df4ac907011a69087fdede7519"
             }
           ]
         },
         {
           "name": "documentation_validation",
-          "version": "0.0.1",
+          "version": "0.0.2",
           "files": [
             {
               "path": ".agents/skills/documentation-validation/SKILL.md",
@@ -273,11 +265,11 @@
             },
             {
               "path": ".ai-data-compass/skills/documentation-validation/subskills/documentation-accuracy/SKILL.md",
-              "sha256": "070859a334150bee99759d29179c3d3dec3a95e613f48bba5228286eb746b3d1"
+              "sha256": "92a13a76b36aea8d2e29c67b833c301cb7baa2c517e29504e11d50212f0fd4f0"
             },
             {
               "path": ".ai-data-compass/skills/documentation-validation/subskills/documentation-links/SKILL.md",
-              "sha256": "e87ff972a8314104da050d77e9da6a8bd3d015fa2d41ca1fb119b963e531a683"
+              "sha256": "101d9239512ae7da3ad02049fb1e978cd52a1b7c64f0284a36a8d5069e67fc04"
             },
             {
               "path": ".claude/skills/documentation-validation/SKILL.md",
@@ -325,7 +317,7 @@
             },
             {
               "path": ".ai-data-compass/skills/security-audit/SKILL.md",
-              "sha256": "a9e55cd7414355084d133ac95f0edde93300ce410a0843799a84a109d468ee37"
+              "sha256": "77850f51a12899e996e274614c9c5fcf3db32020464b6a20edac80849897b574"
             },
             {
               "path": ".ai-data-compass/skills/security-audit/THIRD-PARTY-NOTICES.md",
@@ -337,15 +329,15 @@
             },
             {
               "path": ".ai-data-compass/skills/security-audit/references/report-format.md",
-              "sha256": "1604ecb9e097dd1f9dd800b8c35f8455482ca43c02c8e2bb856f8d55ff7e086f"
+              "sha256": "99ba2b9b30696184201f0dc21704ce5a33f157b9f03fc4ee17fe12297869f6ce"
             },
             {
               "path": ".ai-data-compass/skills/security-audit/scripts/security-surface.sh",
-              "sha256": "4c13d4a5ca2d8801a48ea1f1185f7e4aa8ee398f6adad6365fe337107458873f"
+              "sha256": "b07911a33221fe2d02e38bca78c968ea0992d0f15f0455e5a67fbc0ca6fe995f"
             },
             {
               "path": ".ai-data-compass/skills/security-audit/tests/test_claude_projection.sh",
-              "sha256": "ff7b8f1d2f4b816cfc2a160f5b126411f4821f4b635e65eb28c11d68fc9a3a58"
+              "sha256": "a55dd4ee856b5388744a586c4671782ac8fd7ea09e230f2c33966fb035c94eef"
             },
             {
               "path": ".ai-data-compass/skills/security-audit/tests/test_codex_projection.sh",
@@ -353,7 +345,7 @@
             },
             {
               "path": ".ai-data-compass/skills/security-audit/tests/test_security_surface.sh",
-              "sha256": "d12c42493d65b5be554668ab9aa38ce86aab07c6a25cd026887006be8c9a7c36"
+              "sha256": "d7c22741118e977a54d1384a590334c2b358573ed754e8f95044b96e2cb722ee"
             },
             {
               "path": ".ai-data-compass/skills/security-audit/tests/test_workflow_security_integration.sh",

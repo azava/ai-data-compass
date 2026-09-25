@@ -6,7 +6,7 @@ Reports are metadata-only. They must never contain matching lines, snippets, val
 
 Each finding contains:
 
-- `source`: `working-tree` or `git-history`;
+- `source`: `working-tree`, `filesystem`, or `git-history`;
 - `file`: repository-relative path;
 - `line`: line number, or `0` for filename findings;
 - `rule_id`;
@@ -15,4 +15,4 @@ Each finding contains:
 - `confidence`;
 - `commit`: present for history findings.
 
-The report also records the scan mode, current commit, file count, finding count, truncation status, and generic scan warnings.
+The report also records the scan mode, completion status, file count, finding count, truncation status, and generic scan warnings. Filesystem reports set `commit` to `null`; the history mode is unavailable outside Git. Filesystem mode includes ignored files under the selected root, prunes `.git` entries, and does not follow symlinks. Enumeration or read failures set `complete` to `false` and return exit code `2`.

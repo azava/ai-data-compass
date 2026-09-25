@@ -162,6 +162,18 @@ class DistributionTests(unittest.TestCase):
             self.assertTrue(checker.is_file(), checker)
             checker_result = self._run_link_checker(target, checker)
             self.assertEqual(0, checker_result.returncode, checker_result.stdout + checker_result.stderr)
+            link_guidance = expected_skills[1].read_text(encoding="utf-8")
+            self.assertIn(
+                "python .ai-data-compass/skills/documentation-validation/scripts/check_links.py --root .",
+                link_guidance,
+            )
+            self.assertIn("It skips external URLs.", link_guidance)
+            accuracy_guidance = expected_skills[2].read_text(encoding="utf-8")
+            self.assertIn(
+                "distinguish claims about the adopting project from claims about the vendor or product",
+                accuracy_guidance,
+            )
+            self.assertIn("verification limitation", accuracy_guidance)
             main_skill = expected_skills[0].read_text(encoding="utf-8")
             self.assertIn("subskills/documentation-links/SKILL.md", main_skill)
             self.assertIn("subskills/documentation-accuracy/SKILL.md", main_skill)
@@ -172,11 +184,8 @@ class DistributionTests(unittest.TestCase):
                 (target / ".claude" / "skills" / "documentation-validation" / "SKILL.md").is_file()
             )
             instructions = (target / "AGENTS.md").read_text(encoding="utf-8")
-            self.assertIn("documentation-validation procedure configured", instructions)
-            self.assertIn(
-                "collision name formed with the `documentation-validation` prefix and `-ai-data-compass` suffix",
-                instructions,
-            )
+            self.assertIn("Use the configured documentation-validation procedure", instructions)
+            self.assertIn("look for the skill under `.ai-data-compass/skills/`", instructions)
             manifest = json.loads(
                 (target / ".ai-data-compass" / "manifest.json").read_text(encoding="utf-8")
             )
@@ -208,13 +217,15 @@ class DistributionTests(unittest.TestCase):
         distribution = (
             REPOSITORY_ROOT / ".ai-data-compass" / "docs" / "distribution.md"
         ).read_text(encoding="utf-8")
+        maintainer_distribution = (
+            REPOSITORY_ROOT / "docs" / "maintainers" / "distribution.md"
+        ).read_text(encoding="utf-8")
         self.assertIn("python -m pip install ai-data-compass", readme)
         self.assertIn("ai-data-compass init --assets complete", readme)
 
-        self.assertIn("python -m pip install .", distribution)
-        self.assertIn("pipx install .", distribution)
         self.assertIn("python -m pip install ai-data-compass", distribution)
-        self.assertIn("pipx install ai-data-compass", distribution)
+        self.assertIn("python -m pip install .", maintainer_distribution)
+        self.assertIn("pipx install .", maintainer_distribution)
     def test_python_requirement_and_compatibility_metadata(self) -> None:
         pyproject = (REPOSITORY_ROOT / "pyproject.toml").read_text(encoding="utf-8")
         requires_python = self._project_requires_python()

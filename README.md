@@ -42,16 +42,17 @@ When a skill directory name is already occupied by different content, the instal
 
 ## Documentation
 
-Project guidance, workflows, and planning references:
+Adopter guidance and package planning references:
 
 - [Central AI agent instructions](AGENTS.md)
 - [Documentation index](.ai-data-compass/docs/README.md)
 - [Distribution and installation](.ai-data-compass/docs/distribution.md)
-- [AI agent skills](.ai-data-compass/docs/ai-agent-skills.md)
 - [Security and privacy](.ai-data-compass/docs/security-and-privacy.md)
 - [Testing guidance](.ai-data-compass/docs/tests.md)
 - [Task completion checklist](.ai-data-compass/docs/task-completion.md)
 - [Internal pending features backlog](PENDING_FEATURES.md)
+
+Package maintainer procedures are documented in [docs/maintainers/README.md](docs/maintainers/README.md).
 
 ## License
 

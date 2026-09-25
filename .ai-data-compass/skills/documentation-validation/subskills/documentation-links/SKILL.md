@@ -7,7 +7,7 @@ description: Check documentation links and verify their local file and section t
 
 Review links in the selected repository documentation and identify links that do not resolve to their intended target. Correct a broken link when the intended target is clear from the repository. If it is unclear, leave it unchanged and report the ambiguity.
 
-Run `scripts/check_links.py` from this skill's directory with the currently active Python executable and pass the repository root with `--root`. For example: `python <skill-directory>/scripts/check_links.py --root <repository-root>`. It checks local target files and section fragments, resolving relative paths from the document containing the link. External URLs are skipped.
+From the adopting repository root, run the checker bundled in the canonical `documentation-validation` skill directory: `python .ai-data-compass/skills/documentation-validation/scripts/check_links.py --root .`. If the skill directory has a collision suffix, use its installed name in that path. The checker tests local target files and section fragments, resolving relative paths from each document. It skips external URLs.
 
 If no project checker is available, inspect the Markdown links in scope and verify their local paths and section fragments using available tools. Check link forms not covered by the project's checker separately. External URLs need not be checked unless the project procedure requires it and network access is available; report when they were not checked.
 

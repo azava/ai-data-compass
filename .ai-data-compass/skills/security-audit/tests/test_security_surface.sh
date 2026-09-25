@@ -102,6 +102,32 @@ working_fail_status=0
 working_fail_report=$(bash "$SCANNER" --root "$TEST_ROOT/repo" --mode working-tree --format json --fail-on-findings) || working_fail_status=$?
 [[ $working_fail_status -eq 1 ]] || fail 'fail-on-findings mode should return one'
 
+# Verify local filesystem scanning works without Git metadata.
+mkdir -p "$TEST_ROOT/local-only/.git" "$TEST_ROOT/local-only/config"
+printf '%s\n' 'config/local.env' > "$TEST_ROOT/local-only/.gitignore"
+filesystem_key=api_key
+filesystem_value=synthetic-filesystem-value
+printf '%s=%s\n' "$filesystem_key" "$filesystem_value" > "$TEST_ROOT/local-only/config/local.env"
+symlink_value=synthetic-symlink-target-value
+printf '%s=%s\n' "$filesystem_key" "$symlink_value" > "$TEST_ROOT/outside-filesystem-target"
+ln -sfn "$TEST_ROOT/outside-filesystem-target" "$TEST_ROOT/local-only/config/linked-file"
+filesystem_report=$(bash "$SCANNER" --root "$TEST_ROOT/local-only" --mode filesystem --format json)
+assert_contains "$filesystem_report" '"mode":"filesystem"'
+assert_contains "$filesystem_report" '"commit":null'
+assert_contains "$filesystem_report" '"complete":true'
+assert_contains "$filesystem_report" '"source":"filesystem"'
+assert_contains "$filesystem_report" 'credential.assignment'
+assert_contains "$filesystem_report" 'credential.filename'
+assert_contains "$filesystem_report" '"files_scanned":2'
+assert_contains "$filesystem_report" '"files_skipped":1'
+assert_not_contains "$filesystem_report" "$filesystem_value"
+assert_not_contains "$filesystem_report" "$symlink_value"
+python3 -c 'import json, sys; json.load(sys.stdin)' <<< "$filesystem_report" || fail 'filesystem JSON report is invalid'
+
+history_status=0
+bash "$SCANNER" --root "$TEST_ROOT/local-only" --mode history --format json >/dev/null 2>&1 || history_status=$?
+[[ $history_status -eq 2 ]] || fail 'history mode should remain unavailable without Git'
+
 # Commit the synthetic exposure, then commit its removal.
 git -C "$TEST_ROOT/repo" add README.md config
 git -C "$TEST_ROOT/repo" commit -q -m initial

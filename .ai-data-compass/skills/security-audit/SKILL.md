@@ -16,21 +16,25 @@ Use this skill when a repository must be checked for accidentally committed cred
 
 ## Workflow
 
-1. Define the immutable commit and working-tree state before interpreting findings.
-2. Resolve the repository root with `git rev-parse --show-toplevel`.
-3. Run `.ai-data-compass/skills/security-audit/scripts/security-surface.sh` in `working-tree` mode for tracked and nonignored untracked files.
-4. Run `--mode history` separately when historical exposure is in scope.
-5. Review only the redacted Markdown or JSON report. Do not inspect matching lines directly.
-6. Report findings, scan limits, unavailable files, and residual risk. Do not claim that the repository is secure because the scan is clean.
+1. Resolve the requested scan directory. If it belongs to a valid Git repository, record its commit and working-tree state; otherwise treat it as a local filesystem scope.
+2. In a Git repository, run the bundled scanner in `working-tree` mode for tracked and nonignored untracked files. Run `history` separately when historical exposure is in scope.
+3. When the directory is not in a valid Git repository, run the scanner in `filesystem` mode. This scans regular files below the requested root, includes ignored files, excludes `.git` internals, and does not follow symlinks. Git history is unavailable in this mode; report that explicitly.
+4. Review only the redacted Markdown or JSON report. Do not inspect matching lines directly.
+5. Report findings, scan limits, unavailable files, and residual risk. A filesystem report with `complete: false` or scanner exit code `2` is incomplete and must not be described as clean. Do not claim that the repository is secure because the scan is clean.
 
 Examples:
 
 ```bash
-REPO_ROOT="$(git rev-parse --show-toplevel)"
-bash "$REPO_ROOT/.ai-data-compass/skills/security-audit/scripts/security-surface.sh" \
-  --root "$REPO_ROOT" --mode working-tree --format markdown
-bash "$REPO_ROOT/.ai-data-compass/skills/security-audit/scripts/security-surface.sh" \
-  --root "$REPO_ROOT" --mode history --format json
+SCAN_ROOT="/path/to/repository-or-directory"
+SCANNER="$SCAN_ROOT/.ai-data-compass/skills/security-audit/scripts/security-surface.sh"
+if git -C "$SCAN_ROOT" rev-parse --show-toplevel >/dev/null 2>&1; then
+  REPO_ROOT="$(git -C "$SCAN_ROOT" rev-parse --show-toplevel)"
+  SCANNER="$REPO_ROOT/.ai-data-compass/skills/security-audit/scripts/security-surface.sh"
+  bash "$SCANNER" --root "$REPO_ROOT" --mode working-tree --format markdown
+  bash "$SCANNER" --root "$REPO_ROOT" --mode history --format json
+else
+  bash "$SCANNER" --root "$SCAN_ROOT" --mode filesystem --format markdown
+fi
 ```
 
 ## Optional failure mode
