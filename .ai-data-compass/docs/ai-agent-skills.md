@@ -27,6 +27,8 @@ Claude Code discovers project skills under `.claude/skills/<skill-name>/SKILL.md
 
 The catalog drives CLI selection and package inclusion. Adding a catalog entry does not generate the canonical files or host projections; those files must also be present in the repository.
 
+A skill may include supporting subskills that its main workflow reads and follows. Keep these under the canonical skill directory; add separate catalog entries and host adapters only when they should also be independently discoverable.
+
 ## Security contract
 
 Skills are trusted repository instructions and should be reviewed like executable code. Security-sensitive skills should use local deterministic tools where possible, avoid external network calls unless explicitly required, and never expose secret or personally identifiable values in output.

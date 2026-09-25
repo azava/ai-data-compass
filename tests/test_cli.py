@@ -456,7 +456,7 @@ class CliTests(unittest.TestCase):
             )
             self.assertEqual(
                 manifest["assets"],
-                ["base", "agents.md", "project_review", "security_audit"],
+                ["base", "agents.md", "documentation_validation", "project_review", "security_audit"],
             )
 
     def test_agents_only_selection_does_not_install_skill_license_or_notice(self) -> None:
@@ -888,7 +888,7 @@ class CliTests(unittest.TestCase):
             )
             self.assertEqual(
                 manifest["assets"],
-                ["base", "agents.md", "project_review", "security_audit"],
+                ["base", "agents.md", "documentation_validation", "project_review", "security_audit"],
             )
 
     def test_init_rejects_nonexistent_target(self) -> None:
@@ -1019,10 +1019,11 @@ class CliTests(unittest.TestCase):
             normalize_assets(["agents.md, security-audit"]),
         )
         self.assertEqual(
-            ["project_review", "security_audit"], normalize_assets(["skills"])
+            ["documentation_validation", "project_review", "security_audit"],
+            normalize_assets(["skills"]),
         )
         self.assertEqual(
-            ["agents.md", "project_review", "security_audit"],
+            ["agents.md", "documentation_validation", "project_review", "security_audit"],
             normalize_assets(["complete"]),
         )
 

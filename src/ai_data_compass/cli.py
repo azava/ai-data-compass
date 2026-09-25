@@ -56,8 +56,9 @@ def build_parser() -> argparse.ArgumentParser:
     init_parser.add_argument(
         "--assets",
         help=(
-            "Comma-separated assets: complete, agents.md, security_audit, or "
-            "skills. Without this option, show the asset installer."
+            "Comma-separated assets: complete, agents.md, skills, or a skill "
+            "asset such as documentation_validation. Without this option, "
+            "show the asset installer."
         ),
     )
     verify_parser = subparsers.add_parser(
