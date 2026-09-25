@@ -5,6 +5,7 @@ This directory contains additional detail for the procedures referenced by `AGEN
 ## Procedure files
 
 - [Distribution](distribution.md)
+- [Asset Versioning](asset-versioning.md)
 - [Security and Privacy](security-and-privacy.md)
 - [Communication and Documentation](communication-and-documentation.md)
 - [Development Patterns](development-patterns.md)
