@@ -7,7 +7,7 @@
   {
     "asset": "data_quality_testing",
     "directory": "data-quality-testing",
-    "description": "Plan tests for data quality and business rules"
+    "description": "Design and implement tests for data quality and business rules"
   },
   {
     "asset": "security_audit",
@@ -20,6 +20,11 @@
     "description": "Read-only senior review of a complete repository"
   },
   {
+    "asset": "project_quality_metrics",
+    "directory": "project-quality-metrics",
+    "description": "Define and track project quality metrics"
+  },
+  {
     "asset": "documentation_validation",
     "directory": "documentation-validation",
     "description": "Run documentation link and accuracy reviews"
@@ -27,6 +32,6 @@
   {
     "asset": "test_gap_review",
     "directory": "test-gap-review",
-    "description": "Find missing behavior and regression tests"
+    "description": "Find and address gaps in behavior and regression tests"
   }
 ]

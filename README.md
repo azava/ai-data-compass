@@ -50,6 +50,8 @@ After the review, the developer invokes the `test-gap-review` skill to map behav
 
 Alongside code tests, the developer invokes the `data-quality-testing` skill to check data rules such as required fields, allowed values, duplicates, and consistency. Before choosing an execution mode, the agent establishes privacy limits and discusses data volume, infrastructure, and cost with the developer; if the agent cannot access the necessary environment, it prepares steps for the developer to run there and reviews the resulting safe summary.
 
+To track broader project health, the developer invokes the `project-quality-metrics` skill. The agent checks what the repository already measures, recommends three focused options for the first round, and helps implement one at a time; when the project has no setup, it can start with a small CI-collected history and add more infrastructure only when the project's needs call for it.
+
 Once those changes are ready, the developer invokes the `before-consider-done` skill to follow the repository's completion procedure. It checks applicable tests and configured metrics, uses the `documentation-validation` and `security-audit` skills for their respective reviews, and reports anything skipped or unavailable.
 
 ## Available assets
@@ -62,7 +64,8 @@ Once those changes are ready, the developer invokes the `before-consider-done` s
 | `documentation_validation` | Runs the documentation link and accuracy reviews together. | Ask your agent to run the `documentation-validation` skill. |
 | `security_audit` | Security-audit skill with its scanner, references, tests, and Codex and Claude adapters. | Ask your agent to run the `security-audit` skill and review its metadata-only findings. |
 | `test_gap_review` | Maps missing behavioral and regression tests and guides focused test-writing rounds. | Ask your agent to run the `test-gap-review` skill on the repository or selected changes. |
-| `data_quality_testing` | Plan tests for data quality and business rules. | Ask your agent to run the `data-quality-testing` skill to plan privacy-aware tests and choose how and where to execute them. |
+| `data_quality_testing` | Design and implement tests for data quality and business rules. | Ask your agent to run the `data-quality-testing` skill to plan privacy-aware tests and choose how and where to execute them. |
+| `project_quality_metrics` | Define and track project quality metrics. | Ask your agent to run the `project-quality-metrics` skill to choose useful metrics and build a history and baseline suited to the project. |
 
 ## Documentation
 
