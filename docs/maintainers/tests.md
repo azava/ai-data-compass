@@ -13,6 +13,12 @@ This document contains additional testing procedures for the rules in `AGENTS.md
 
 `PYTHONPATH=src python -m unittest discover -s tests -q -b`
 
+- Run the published-package smoke test locally without contacting a package index:
+
+`python .github/scripts/smoke_test_published_package.py --local`
+
+The full Python suite runs this local smoke test automatically. To verify an exact published release, provide `--version` and `--index-url`; for TestPyPI dependencies, also provide `--extra-index-url https://pypi.org/simple/`.
+
 - The GitHub Actions test workflow runs the suite on Python 3.9 through 3.13 for pull requests only. Require all five Python matrix checks and the security audit check before merging a pull request.
 
 - `bash .ai-data-compass/skills/security-audit/tests/test_security_surface.sh`

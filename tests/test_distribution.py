@@ -21,6 +21,68 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 
 
 class DistributionTests(unittest.TestCase):
+    def test_published_package_smoke_script_supports_local_suite_run(self) -> None:
+        script = REPOSITORY_ROOT / ".github/scripts/smoke_test_published_package.py"
+        result = subprocess.run(
+            [sys.executable, str(script), "--local"],
+            check=False,
+            capture_output=True,
+            text=True,
+            cwd=REPOSITORY_ROOT,
+        )
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertIn("Local package smoke test passed", result.stdout)
+
+    def test_testpypi_workflow_exports_version_from_existing_step(self) -> None:
+        workflow = (
+            REPOSITORY_ROOT / ".github/workflows/publish-to-testpypi.yml"
+        ).read_text(encoding="utf-8")
+        self.assertIn("id: package-version", workflow)
+        self.assertIn(
+            "package-version: ${{ steps.package-version.outputs.package-version }}",
+            workflow,
+        )
+
+    def test_security_audit_skill_frontmatter_is_valid_in_all_formats(self) -> None:
+        expected_name = "security-audit"
+        expected_description = (
+            "Audit a repository for credential exposure in its working tree and Git history."
+        )
+        skill_paths = (
+            REPOSITORY_ROOT / ".ai-data-compass/skills/security-audit/SKILL.md",
+            REPOSITORY_ROOT / ".agents/skills/security-audit/SKILL.md",
+            REPOSITORY_ROOT / ".claude/skills/security-audit/SKILL.md",
+        )
+
+        for skill_path in skill_paths:
+            with self.subTest(path=skill_path):
+                content = skill_path.read_text(encoding="utf-8")
+                frontmatter = content.split("---", 2)[1]
+                metadata = dict(
+                    line.split(":", 1)
+                    for line in frontmatter.strip().splitlines()
+                    if ":" in line
+                )
+                self.assertEqual(expected_name, metadata.get("name", "").strip())
+                self.assertEqual(
+                    expected_description, metadata.get("description", "").strip()
+                )
+
+    def test_skill_catalog_descriptions_match_supported_scope(self) -> None:
+        catalog = json.loads(
+            (REPOSITORY_ROOT / "src/ai_data_compass/skill_catalog.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        descriptions = {entry["asset"]: entry["description"] for entry in catalog}
+        self.assertEqual(
+            "Audit repository files and history for credential exposure",
+            descriptions["security_audit"],
+        )
+        self.assertEqual(
+            "Review full or focused repository scopes", descriptions["project_review"]
+        )
+
     def _run_link_checker(self, root: Path, script: Path | None = None) -> subprocess.CompletedProcess[str]:
         checker = script or (
             REPOSITORY_ROOT

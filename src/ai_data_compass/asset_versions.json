@@ -403,7 +403,7 @@
             },
             {
               "path": ".ai-data-compass/skills/security-audit/SKILL.md",
-              "sha256": "77850f51a12899e996e274614c9c5fcf3db32020464b6a20edac80849897b574"
+              "sha256": "eec116932adb2a7a2d2c994b9eafa10e476f9b2c91dbdb3da9763a0c5eea7344"
             },
             {
               "path": ".ai-data-compass/skills/security-audit/THIRD-PARTY-NOTICES.md",
@@ -439,7 +439,7 @@
             },
             {
               "path": ".claude/skills/security-audit/SKILL.md",
-              "sha256": "9c7095fa10f2b81cc78c94e0b79aa93776dfe991662ecaa5ea51f566d3b3f663"
+              "sha256": "6eaa945067b2c2b04e1b7131a2aa78410507696696fd269c3ca1ab7ab0e59cbc"
             }
           ]
         },

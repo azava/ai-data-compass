@@ -85,8 +85,13 @@ def install_with_retries(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--version", required=True, help="Exact published version to install")
-    parser.add_argument("--index-url", required=True, help="Package index containing the release")
+    parser.add_argument(
+        "--local",
+        action="store_true",
+        help="Smoke-test the current source checkout without installing from an index",
+    )
+    parser.add_argument("--version", help="Exact published version to install")
+    parser.add_argument("--index-url", help="Package index containing the release")
     parser.add_argument(
         "--extra-index-url",
         action="append",
@@ -95,7 +100,64 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    distribution, cli_command, module = project_contract(Path("pyproject.toml"))
+    if args.local:
+        if args.version or args.index_url or args.extra_index_url:
+            parser.error(
+                "--local cannot be combined with published-version or index options"
+            )
+    else:
+        if not args.version or not args.version.strip():
+            parser.error("--version must be a non-empty exact package version")
+        if not args.index_url:
+            parser.error("--index-url is required unless --local is used")
+
+    project_file = Path(__file__).resolve().parents[2] / "pyproject.toml"
+    distribution, cli_command, module = project_contract(project_file)
+    if args.local:
+        expected_version = tomllib.loads(
+            project_file.read_text(encoding="utf-8")
+        )["project"]["version"]
+        source_directory = project_file.parent / "src"
+        local_env = os.environ.copy()
+        local_env.pop("PYTHONHOME", None)
+        local_env["PYTHONPATH"] = str(source_directory) + (
+            os.pathsep + local_env["PYTHONPATH"] if local_env.get("PYTHONPATH") else ""
+        )
+        with tempfile.TemporaryDirectory(
+            prefix="published-package-local-smoke-"
+        ) as temporary_directory:
+            root = Path(temporary_directory)
+            probe = (
+                "import importlib, sys; "
+                "from ai_data_compass import __version__; "
+                "expected, module = sys.argv[1:]; "
+                    "__version__ == expected or sys.exit("
+                    "f'loaded version {__version__}, expected {expected}'); "
+                "importlib.import_module(module)"
+            )
+            result = run(
+                [sys.executable, "-c", probe, expected_version, module],
+                env=local_env,
+                cwd=root,
+            )
+            if result.returncode != 0:
+                sys.stderr.write(result.stderr)
+                raise SystemExit("Local package metadata or import smoke test failed")
+            for option in ("--version", "--help"):
+                result = run(
+                    [sys.executable, "-m", module, option], env=local_env, cwd=root
+                )
+                if result.returncode != 0:
+                    sys.stderr.write(result.stdout)
+                    sys.stderr.write(result.stderr)
+                    raise SystemExit(f"Local command failed: {cli_command} {option}")
+                if option == "--version" and expected_version not in result.stdout:
+                    raise SystemExit(
+                        f"{cli_command} --version did not report {expected_version}"
+                    )
+        print(f"Local package smoke test passed: {distribution} {expected_version}")
+        return 0
+
     requirement = f"{distribution}=={args.version}"
     clean_env = os.environ.copy()
     clean_env.pop("PYTHONPATH", None)

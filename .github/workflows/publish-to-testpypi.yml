@@ -18,7 +18,7 @@ jobs:
     name: Build and validate development distributions
     runs-on: ubuntu-latest
     outputs:
-      package-version: ${{ steps.development-version.outputs.package-version }}
+      package-version: ${{ steps.package-version.outputs.package-version }}
 
     steps:
       - name: Check out source
