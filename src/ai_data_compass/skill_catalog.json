@@ -1,7 +1,37 @@
 [
   {
+    "asset": "before_consider_done",
+    "directory": "before-consider-done",
+    "description": "Run validation before considering a task done"
+  },
+  {
+    "asset": "data_quality_testing",
+    "directory": "data-quality-testing",
+    "description": "Design and implement tests for data quality and business rules"
+  },
+  {
     "asset": "security_audit",
     "directory": "security-audit",
     "description": "Security audit skill and host adapters"
+  },
+  {
+    "asset": "project_review",
+    "directory": "project-review",
+    "description": "Read-only senior review of a complete repository"
+  },
+  {
+    "asset": "project_quality_metrics",
+    "directory": "project-quality-metrics",
+    "description": "Define and track project quality metrics"
+  },
+  {
+    "asset": "documentation_validation",
+    "directory": "documentation-validation",
+    "description": "Run documentation link and accuracy reviews"
+  },
+  {
+    "asset": "test_gap_review",
+    "directory": "test-gap-review",
+    "description": "Find and address gaps in behavior and regression tests"
   }
 ]

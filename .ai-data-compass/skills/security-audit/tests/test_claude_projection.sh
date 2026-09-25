@@ -42,6 +42,7 @@ assert_contains "$ADAPTER" 'name: security-audit'
 assert_contains "$ADAPTER" "description: $description"
 assert_contains "$ADAPTER" '.ai-data-compass/skills/security-audit/SKILL.md'
 assert_contains "$ADAPTER" '.ai-data-compass/skills/security-audit/scripts/security-surface.sh'
-assert_contains "$CANONICAL" 'REPO_ROOT="$(git rev-parse --show-toplevel)"'
+assert_contains "$CANONICAL" 'git -C "$SCAN_ROOT" rev-parse --show-toplevel'
+assert_contains "$CANONICAL" '--mode filesystem'
 
 printf '%s\n' 'Claude skill projection tests passed'
