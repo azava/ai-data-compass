@@ -20,6 +20,8 @@ pipx install ai-data-compass
 
 The package provides the CLI and installs the base documentation with every asset selection. `complete` installs the agent instructions and all available skills; `agents.md` installs `AGENTS.md` and its host adapters; each skill option installs that skill and its Codex and Claude projections; and `skills` installs all available skills. These values can be combined with commas.
 
+Every new distributable asset must have an adopter-facing usage example in the root `README.md`. For skills, make clear that the example invokes a skill, and tell its steps as a short narrative with connective transitions between paragraphs. Update the example when an asset's setup or usage flow changes; keep package-maintenance procedures in this document.
+
 Skills are registered in `src/ai_data_compass/skill_catalog.json`. To add a skill, add one catalog entry with its CLI asset name, canonical directory, and menu description, then add its canonical files under `.ai-data-compass/skills/<directory>/` and its Codex and Claude projections. Each skill also needs its own `LICENSE` and `THIRD-PARTY-NOTICES.md`. The CLI selection and packaged skill files are derived from the catalog.
 
 The catalog and the asset version registry are package data. The registry at `src/ai_data_compass/asset_versions.json` records each package snapshot with every included asset, its independent asset version, repository-relative source paths, and SHA-256 hashes. Follow [Asset Versioning](asset-versioning.md) when adding package snapshots or changing assets. The future `ai-data-compass update` command can use these snapshots to compare installed files with the selected package version.

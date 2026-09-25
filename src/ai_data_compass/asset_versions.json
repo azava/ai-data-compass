@@ -157,7 +157,7 @@
       "assets": [
         {
           "name": "agents.md",
-          "version": "0.0.2",
+          "version": "0.0.4",
           "files": [
             {
               "path": ".cursor/rules/agents.mdc",
@@ -173,7 +173,7 @@
             },
             {
               "path": "AGENTS.md",
-              "sha256": "171bc42597ae41b4eef9efa69f2a24f4faef469e791ca3d915c1cad133527ec5"
+              "sha256": "4c6faf2b307b91cbc4873b30b9ec11e404ab5e49fcc0d8d2e4bbceebc49c7058"
             },
             {
               "path": "CLAUDE.md",
@@ -236,6 +236,32 @@
             {
               "path": ".ai-data-compass/docs/tests.md",
               "sha256": "d1e0b55d0a65849b3d41df3801db39b33acb98df4ac907011a69087fdede7519"
+            }
+          ]
+        },
+        {
+          "name": "before_consider_done",
+          "version": "0.0.1",
+          "files": [
+            {
+              "path": ".agents/skills/before-consider-done/SKILL.md",
+              "sha256": "fc9c7e9f6e38860ff18b4fbf6bd27863d17471cde40983923e81ae6975e921eb"
+            },
+            {
+              "path": ".ai-data-compass/skills/before-consider-done/LICENSE",
+              "sha256": "a7c5979459a036871687d03af26e5344aed9a61eaab9e429e033428a1cdcd18f"
+            },
+            {
+              "path": ".ai-data-compass/skills/before-consider-done/SKILL.md",
+              "sha256": "6cd4fc6a4ea18f5afe0c94a790739db11ffb368b328c8848454fad288471f04a"
+            },
+            {
+              "path": ".ai-data-compass/skills/before-consider-done/THIRD-PARTY-NOTICES.md",
+              "sha256": "fdad033bc85b7d48f42c45c1ac95a65a6e35d1f8110a2a7d8972b2ac17f3b33c"
+            },
+            {
+              "path": ".claude/skills/before-consider-done/SKILL.md",
+              "sha256": "f327efdf3912fa71e5dc496ce3829d3c13c64568f57c8b07de5edacd68fb656a"
             }
           ]
         },

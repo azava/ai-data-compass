@@ -31,11 +31,27 @@ When `AGENTS.md` already contains different instructions, the installer asks per
 
 When a skill directory name is already occupied by different content, the installer uses `<skill-name>-ai-data-compass` (or a numbered suffix) and updates the installed references to use that name.
 
+## Example of use
+
+A developer starts by installing AI Data Compass and launching its setup:
+
+```bash
+python -m pip install ai-data-compass
+ai-data-compass init
+```
+
+When the installer asks what to add, the developer chooses `complete` to get the agent guidance and all available skills. If an existing `AGENTS.md` has different content, the installer asks before adding a reference, and the developer types `y` to agree.
+
+With setup finished, the developer asks the coding agent to use `project-review` to examine the repository and report concrete findings. They review the results and fix the issues they decide to address.
+
+Once those changes are ready, the developer invokes `before-consider-done` skill to follow the repository's completion procedure. It checks applicable tests and configured metrics, uses `documentation-validation` and `security-audit`  skills for their respective reviews, and reports anything skipped or unavailable.
+
 ## Available assets
 
 | Name | Description | How to use |
 | --- | --- | --- |
 | `agents.md` | `AGENTS.md` guidance and host adapters for supported coding agents. Tested with Claude and Codex | Your agent should import and follow `AGENTS.md`; instructions already defined by the project take precedence if they conflict. |
+| `before_consider_done` | Validation procedure to run before considering a task done. | Ask your agent to run the `before-consider-done` skill when installed. |
 | `project_review` | Read-only senior review of a complete repository, with an optional hosted-repository review. | Ask your agent to run the `project-review` skill; hosted review requires your approval to access the repository platform. |
 | `documentation_validation` | Runs the documentation link and accuracy reviews together. | Ask your agent to run the `documentation-validation` skill. |
 | `security_audit` | Security-audit skill with its scanner, references, tests, and Codex and Claude adapters. | Ask your agent to run the `security-audit` skill and review its metadata-only findings. |
