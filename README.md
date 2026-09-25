@@ -40,19 +40,19 @@ python -m pip install ai-data-compass
 ai-data-compass init
 ```
 
-When the installer asks what to add, the developer chooses `complete` to get the agent guidance and all available skills. If an existing `AGENTS.md` has different content, the installer asks before adding a reference, and the developer types `y` to agree.
+The developer selects `complete` to install all guidance and skills, then types `y` to approve an added reference if **`AGENTS.md`** already contains different instructions.
 
-From then on, the agent follows the AI Data Compass guidance in `AGENTS.md`, improving communication, code quality, documentation, and security throughout its work.
+From then on, the agent follows the AI Data Compass guidance in **`AGENTS.md`**, improving communication, code quality, documentation, and security throughout its work.
 
-With those guidelines in place, the developer asks the coding agent to use `project-review` to examine the repository and report concrete findings. They review the results and fix the issues they decide to address.
+The developer asks **`project-review`** to inspect the repository and report findings, then decides which issues to fix.
 
-After the review, the developer invokes the `test-gap-review` skill to map behaviors and documented bugs that lack meaningful tests. The skill offers three places to start, and the developer chooses one area to work through with the agent using the project's native test tools.
+Next, **`test-gap-review`** finds behaviors or bugs that need regression tests. The developer chooses an area and works through it with the project's test tools.
 
-Alongside code tests, the developer invokes the `data-quality-testing` skill to check data rules such as required fields, allowed values, duplicates, and consistency. Before choosing an execution mode, the agent establishes privacy limits and discusses data volume, infrastructure, and cost with the developer; if the agent cannot access the necessary environment, it prepares steps for the developer to run there and reviews the resulting safe summary.
+The **`data-quality-testing`** skill helps check rules such as required fields, allowed values, duplicates, and consistency while accounting for privacy, volume, infrastructure, and cost.
 
-To track broader project health, the developer invokes the `project-quality-metrics` skill. The agent checks what the repository already measures, recommends three focused options for the first round, and helps implement one at a time; when the project has no setup, it can start with a small CI-collected history and add more infrastructure only when the project's needs call for it.
+The **`project-quality-metrics`** skill helps choose and track useful measures of project health.
 
-Once those changes are ready, the developer invokes the `before-consider-done` skill to follow the repository's completion procedure. It checks applicable tests and configured metrics, uses the `documentation-validation` and `security-audit` skills for their respective reviews, and reports anything skipped or unavailable.
+Before finishing, **`before-consider-done`** checks the project's tests, metrics, documentation, and security review procedures, and reports anything unavailable.
 
 ## Available assets
 
