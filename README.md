@@ -15,11 +15,21 @@ python -m pip install ai-data-compass
 ai-data-compass init --assets complete
 ```
 
-The recommended `complete` selection installs the agent instructions and all available skills. Run `ai-data-compass init` without `--assets` to choose interactively; leaving the selection empty chooses `complete`.
+The recommended `complete` selection installs the agent instructions and all available skills.
 
-Every installation includes the base documentation, license, and third-party notices. The installer creates missing files and preserves existing files whose content and required permissions already match. If another existing target file differs, the installer refuses that asset instead of overwriting the file; it can continue with other selected assets and exits with a nonzero status.
+To choose assets interactively, run:
 
-When `AGENTS.md` already contains different instructions, the installer asks permission to create `AGENTS-ai-data-compass.md` (or the next available numbered name) and add a reference to it in the existing file; declining skips the agent-instructions asset. When a skill directory name is already occupied by different content, the installer uses `<skill-name>-ai-data-compass` (or a numbered suffix) and updates the installed references to use that name.
+```bash
+ai-data-compass init
+```
+
+Every installation includes the base documentation, license, and third-party notices. The installer creates missing files and preserves existing files whose content and required permissions already match.
+
+If another existing target file differs, the installer refuses that asset instead of overwriting the file; it can continue with other selected assets and exits with a nonzero status.
+
+When `AGENTS.md` already contains different instructions, the installer asks permission to create `AGENTS-ai-data-compass.md` (or the next available numbered name) and add a reference to it in the existing file; declining skips the agent-instructions asset.
+
+When a skill directory name is already occupied by different content, the installer uses `<skill-name>-ai-data-compass` (or a numbered suffix) and updates the installed references to use that name.
 
 ## Available assets
 

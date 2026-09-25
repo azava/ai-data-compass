@@ -4,7 +4,7 @@ AI Data Compass is distributed as the `ai-data-compass` Python package. Its CLI 
 
 The initial package supports Python 3.9 and newer. Compatibility should be verified across the supported interpreter matrix before each release.
 
-Version `0.0.1` is published on PyPI. To install the current local source, run these commands from the repository root:
+Version `0.0.1` is published on PyPI. This checkout is preparing package version `0.0.2`. To install the current local source, run these commands from the repository root:
 
 ```bash
 python -m pip install .
@@ -22,7 +22,9 @@ The package provides the CLI and installs the base documentation with every asse
 
 Skills are registered in `src/ai_data_compass/skill_catalog.json`. To add a skill, add one catalog entry with its CLI asset name, canonical directory, and menu description, then add its canonical files under `.ai-data-compass/skills/<directory>/` and its Codex and Claude projections. Each skill also needs its own `LICENSE` and `THIRD-PARTY-NOTICES.md`. The CLI selection and packaged skill files are derived from the catalog.
 
-The catalog itself is package data. Other distributable assets are currently installed under the platform data directory at `share/ai-data-compass/assets` by `setup.py`. Moving those assets inside the Python package and loading them as package resources remains a future improvement.
+The catalog and the asset version registry are package data. The registry at `src/ai_data_compass/asset_versions.json` records each package snapshot with every included asset, its independent asset version, repository-relative source paths, and SHA-256 hashes. Follow [Asset Versioning](asset-versioning.md) when adding package snapshots or changing assets. The future `ai-data-compass update` command can use these snapshots to compare installed files with the selected package version.
+
+Other distributable assets are currently installed under the platform data directory at `share/ai-data-compass/assets` by `setup.py`. Moving those assets inside the Python package and loading them as package resources remains a future improvement.
 
 Running `init` without `--assets` opens the interactive installer. It presents the same options and uses `complete` when the selection is left empty. Terminal colors are used when supported and can be disabled with `NO_COLOR=1`.
 
