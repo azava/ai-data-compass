@@ -278,8 +278,7 @@ def _rendered_bytes(
     )
     is_instruction_reference_doc = is_installed_markdown and source.name in {
         "README.md",
-        "ai-agent-skills.md",
-        "tests.md",
+        "distribution.md",
         "security-and-privacy.md",
     }
     if not is_skill_file and not is_installed_markdown:
