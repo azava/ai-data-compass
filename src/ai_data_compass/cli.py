@@ -56,8 +56,9 @@ def build_parser() -> argparse.ArgumentParser:
     init_parser.add_argument(
         "--assets",
         help=(
-            "Comma-separated assets: complete, agents.md, security_audit, or "
-            "skills. Without this option, show the asset installer."
+            "Comma-separated assets: complete, agents.md, skills, or a skill "
+            "asset such as documentation_validation. Without this option, "
+            "show the asset installer."
         ),
     )
     verify_parser = subparsers.add_parser(
@@ -250,10 +251,18 @@ def _confirm_agents_adoption(path: Path) -> bool:
     print(
         f"An {AGENTS_INSTRUCTIONS_PATH.name} already exists at {path} with different content."
     )
-    answer = input(
-        "Append a single-line instruction and install "
-        f"{agents_supplement_filename()} (or its available numeric suffix)? [y/N]: "
+    print()
+    print(
+        _paint(
+            "Would you like to add an AI Data Compass reference to AGENTS.md?",
+            "1;36",
+        )
     )
+    print(
+        "This helps coding agents discover and follow reusable project guidance."
+    )
+    print(f"Type {_paint('y', '1;32')} to agree; press Enter to keep your file unchanged.")
+    answer = input(_paint("Your choice [y/N]: ", "1;36"))
     return answer.strip().lower() in {"y", "yes"}
 
 

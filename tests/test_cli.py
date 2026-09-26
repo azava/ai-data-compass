@@ -92,7 +92,7 @@ class CliTests(unittest.TestCase):
             self.assertEqual(1, len(instruction_lines))
             self.assertIn("@AGENTS-ai-data-compass.md", (target / "CLAUDE.md").read_text())
             for document in [
-                "README.md", "ai-agent-skills.md", "tests.md", "security-and-privacy.md"
+                "README.md", "distribution.md", "security-and-privacy.md"
             ]:
                 contents = (
                     target / ".ai-data-compass" / "docs" / document
@@ -115,7 +115,7 @@ class CliTests(unittest.TestCase):
             skill_result = install_assets(target, ["security_audit"], root=source_root)
             self.assertEqual("installed", skill_result.outcomes[0].status)
             combined_docs = (
-                target / ".ai-data-compass/docs/tests.md"
+                target / ".ai-data-compass/docs/distribution.md"
             ).read_text(encoding="utf-8")
             self.assertIn("AGENTS-ai-data-compass.md", combined_docs)
             self.assertIn("security-audit-ai-data-compass", combined_docs)
@@ -211,7 +211,7 @@ class CliTests(unittest.TestCase):
             self.assertIn(f"[{resolved}]({resolved})", (target / "AGENTS.md").read_text())
             self.assertIn(f"@{resolved}", (target / "CLAUDE.md").read_text())
             for document in [
-                "README.md", "ai-agent-skills.md", "tests.md", "security-and-privacy.md"
+                "README.md", "distribution.md", "security-and-privacy.md"
             ]:
                 content = (target / ".ai-data-compass/docs" / document).read_text()
                 self.assertIn(resolved, content)
@@ -430,6 +430,15 @@ class CliTests(unittest.TestCase):
             self.assertTrue(
                 (target / ".ai-data-compass" / "skills" / "security-audit" / "SKILL.md").is_file()
             )
+            self.assertTrue(
+                (
+                    target
+                    / ".ai-data-compass"
+                    / "skills"
+                    / "project-review"
+                    / "SKILL.md"
+                ).is_file()
+            )
             self.assertFalse((target / "AGENTS.md").exists())
 
     def test_init_accepts_complete_asset(self) -> None:
@@ -445,7 +454,59 @@ class CliTests(unittest.TestCase):
             manifest = json.loads(
                 (target / ".ai-data-compass" / "manifest.json").read_text(encoding="utf-8")
             )
-            self.assertEqual(manifest["assets"], ["base", "agents.md", "security_audit"])
+            self.assertEqual(
+                manifest["assets"],
+                [
+                    "base",
+                    "agents.md",
+                    "before_consider_done",
+                    "data_quality_testing",
+                    "documentation_validation",
+                    "project_quality_metrics",
+                    "project_review",
+                    "security_audit",
+                    "test_gap_review",
+                ],
+            )
+
+    def test_init_accepts_project_quality_metrics_asset(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)
+            exit_code = main(
+                ["init", str(target), "--assets", "project_quality_metrics"]
+            )
+
+            self.assertEqual(exit_code, 0)
+            canonical = (
+                target
+                / ".ai-data-compass"
+                / "skills"
+                / "project-quality-metrics"
+            )
+            self.assertTrue((canonical / "SKILL.md").is_file())
+            self.assertTrue((canonical / "references" / "metric-history.md").is_file())
+            self.assertTrue((canonical / "LICENSE").is_file())
+            self.assertTrue((canonical / "THIRD-PARTY-NOTICES.md").is_file())
+            for host in (".agents", ".claude"):
+                adapter = (
+                    target
+                    / host
+                    / "skills"
+                    / "project-quality-metrics"
+                    / "SKILL.md"
+                )
+                self.assertTrue(adapter.is_file(), adapter)
+                self.assertIn(
+                    "../../../.ai-data-compass/skills/project-quality-metrics/SKILL.md",
+                    adapter.read_text(encoding="utf-8"),
+                )
+
+            manifest = json.loads(
+                (target / ".ai-data-compass" / "manifest.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            self.assertEqual(manifest["assets"], ["base", "project_quality_metrics"])
 
     def test_agents_only_selection_does_not_install_skill_license_or_notice(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -575,7 +636,7 @@ class CliTests(unittest.TestCase):
             target = Path(directory)
             source_root = Path(__file__).resolve().parents[1]
             install_assets(target, ["agents.md"], root=source_root)
-            document = target / ".ai-data-compass/docs/tests.md"
+            document = target / ".ai-data-compass/docs/distribution.md"
             original_manifest = (target / ".ai-data-compass/manifest.json").read_bytes()
             occupied = target / ".ai-data-compass/skills/security-audit/SKILL.md"
             occupied.parent.mkdir(parents=True)
@@ -734,7 +795,7 @@ class CliTests(unittest.TestCase):
             occupied = target / ".ai-data-compass/skills/security-audit/SKILL.md"
             occupied.parent.mkdir(parents=True)
             occupied.write_text("adopter-owned skill", encoding="utf-8")
-            source_doc = source_root / ".ai-data-compass/docs/tests.md"
+            source_doc = source_root / ".ai-data-compass/docs/distribution.md"
             original_doc = source_doc.read_bytes()
 
             result = install_assets(target, ["security_audit"], root=source_root)
@@ -755,7 +816,7 @@ class CliTests(unittest.TestCase):
                     encoding="utf-8"
                 ),
             )
-            rendered_doc = (target / ".ai-data-compass/docs/tests.md").read_text(
+            rendered_doc = (target / ".ai-data-compass/docs/distribution.md").read_text(
                 encoding="utf-8"
             )
             self.assertIn(f".ai-data-compass/skills/{resolved_name}/", rendered_doc)
@@ -787,7 +848,7 @@ class CliTests(unittest.TestCase):
             target = Path(directory)
             source_root = Path(__file__).resolve().parents[1]
             install_assets(target, ["agents.md"], root=source_root)
-            existing_doc = target / ".ai-data-compass/docs/tests.md"
+            existing_doc = target / ".ai-data-compass/docs/distribution.md"
             canonical_path = target / ".ai-data-compass/skills/security-audit/SKILL.md"
             canonical_path.parent.mkdir(parents=True)
             canonical_path.write_text("adopter-owned skill", encoding="utf-8")
@@ -811,7 +872,7 @@ class CliTests(unittest.TestCase):
             target = Path(directory)
             source_root = Path(__file__).resolve().parents[1]
             install_assets(target, ["agents.md"], root=source_root)
-            doc = target / ".ai-data-compass/docs/ai-agent-skills.md"
+            doc = target / ".ai-data-compass/docs/distribution.md"
             doc.write_text("adopter-modified documentation", encoding="utf-8")
             occupied = target / ".ai-data-compass/skills/security-audit/SKILL.md"
             occupied.parent.mkdir(parents=True)
@@ -874,7 +935,20 @@ class CliTests(unittest.TestCase):
             manifest = json.loads(
                 (target / ".ai-data-compass" / "manifest.json").read_text(encoding="utf-8")
             )
-            self.assertEqual(manifest["assets"], ["base", "agents.md", "security_audit"])
+            self.assertEqual(
+                manifest["assets"],
+                [
+                    "base",
+                    "agents.md",
+                    "before_consider_done",
+                    "data_quality_testing",
+                    "documentation_validation",
+                    "project_quality_metrics",
+                    "project_review",
+                    "security_audit",
+                    "test_gap_review",
+                ],
+            )
 
     def test_init_rejects_nonexistent_target(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -1003,9 +1077,29 @@ class CliTests(unittest.TestCase):
             ["agents.md", "security_audit"],
             normalize_assets(["agents.md, security-audit"]),
         )
-        self.assertEqual(["security_audit"], normalize_assets(["skills"]))
         self.assertEqual(
-            ["agents.md", "security_audit"],
+            [
+                "before_consider_done",
+                "data_quality_testing",
+                "documentation_validation",
+                "project_quality_metrics",
+                "project_review",
+                "security_audit",
+                "test_gap_review",
+            ],
+            normalize_assets(["skills"]),
+        )
+        self.assertEqual(
+            [
+                "agents.md",
+                "before_consider_done",
+                "data_quality_testing",
+                "documentation_validation",
+                "project_quality_metrics",
+                "project_review",
+                "security_audit",
+                "test_gap_review",
+            ],
             normalize_assets(["complete"]),
         )
 

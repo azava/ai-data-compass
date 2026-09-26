@@ -1,8 +1,9 @@
-name: Publish development builds to TestPyPI
+name: Publish builds to TestPyPI
 
 on:
   push:
     branches:
+      - dev
       - homolog
 
 permissions:
@@ -17,7 +18,7 @@ jobs:
     name: Build and validate development distributions
     runs-on: ubuntu-latest
     outputs:
-      package-version: ${{ steps.development-version.outputs.package-version }}
+      package-version: ${{ steps.package-version.outputs.package-version }}
 
     steps:
       - name: Check out source
@@ -30,9 +31,10 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Set unique development version
-        id: development-version
+      - name: Set package version for branch
+        id: package-version
         env:
+          SOURCE_BRANCH: ${{ github.ref_name }}
           DEV_BUILD_NUMBER: ${{ github.run_number }}
         run: |
           python - <<'PY'
@@ -45,19 +47,23 @@ jobs:
           contents = project_file.read_text(encoding="utf-8")
           with project_file.open("rb") as file:
               metadata = tomllib.load(file)
-          current_version = metadata["project"]["version"]
+          project_version = metadata["project"]["version"]
+          if not re.fullmatch(r"\d+\.\d+\.\d+", project_version):
+              raise SystemExit(
+                  f"Expected a stable MAJOR.MINOR.PATCH project version, got {project_version!r}"
+              )
 
-          try:
-              base_version = metadata["tool"]["ai-data-compass"]["release"]["testpypi-base-version"]
-          except KeyError as error:
-              raise SystemExit("Set tool.ai-data-compass.release.testpypi-base-version in pyproject.toml") from error
-          if not re.fullmatch(r"\d+\.\d+\.\d+", base_version):
-              raise SystemExit(f"Invalid stable development base version: {base_version!r}")
+          source_branch = os.environ["SOURCE_BRANCH"]
+          if source_branch == "dev":
+              package_version = f"{project_version}.dev{os.environ['DEV_BUILD_NUMBER']}"
+          elif source_branch == "homolog":
+              package_version = project_version
+          else:
+              raise SystemExit(f"Unsupported TestPyPI source branch: {source_branch!r}")
 
-          development_version = f"{base_version}.dev{os.environ['DEV_BUILD_NUMBER']}"
           version_line = re.compile(r'(?m)^(version\s*=\s*)"[^"]+"$')
           updated_contents, replacements = version_line.subn(
-              lambda match: f'{match.group(1)}"{development_version}"',
+              lambda match: f'{match.group(1)}"{package_version}"',
               contents,
               count=1,
           )
@@ -70,7 +76,7 @@ jobs:
           module_contents = version_module.read_text(encoding="utf-8")
           module_version_line = re.compile(r'(?m)^(__version__\s*=\s*)"[^"]+"$')
           updated_module, module_replacements = module_version_line.subn(
-              lambda match: f'{match.group(1)}"{development_version}"',
+              lambda match: f'{match.group(1)}"{package_version}"',
               module_contents,
               count=1,
           )
@@ -78,10 +84,9 @@ jobs:
               raise SystemExit("Could not safely locate __version__ in the package module")
           version_module.write_text(updated_module, encoding="utf-8")
 
-          print(f"Building TestPyPI development version {development_version}")
-          print(f"Source version before temporary build change: {current_version}")
+          print(f"Building TestPyPI version {package_version} from {source_branch}")
           with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as output:
-              output.write(f"package-version={development_version}\n")
+              output.write(f"package-version={package_version}\n")
           PY
 
       - name: Install build tools

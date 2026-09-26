@@ -1,0 +1,475 @@
+{
+  "schema_version": 1,
+  "hash_algorithm": "sha256",
+  "file_path_basis": "repository-relative source paths",
+  "package_versions": [
+    {
+      "package_version": "0.0.1",
+      "distribution_status": "published_on_pypi",
+      "assets": [
+        {
+          "name": "agents.md",
+          "version": "0.0.1",
+          "files": [
+            {
+              "path": ".cursor/rules/agents.mdc",
+              "sha256": "969561d8f33cda5e71c6aa4645559b1705d152bbb1c102103f75c2fdbe77b5ff"
+            },
+            {
+              "path": ".github/copilot-instructions.md",
+              "sha256": "9957665ec5c72332c07f0e7268fabdc0e58def07914d387596a17a5525b067bf"
+            },
+            {
+              "path": ".windsurfrules",
+              "sha256": "47770ced6deed76b627dc2669e39f14a0cea04d7ff0833ab5a4cf3c1496d1a98"
+            },
+            {
+              "path": "AGENTS.md",
+              "sha256": "13edfb5fb6f29f8f5264f6104da6570217102e944d8e2b6adc62993d7492a42a"
+            },
+            {
+              "path": "CLAUDE.md",
+              "sha256": "5b4333b1e13ad6a5b2ac6575289e7b5e959b0127b697156835c7f2a0fd206780"
+            },
+            {
+              "path": "GEMINI.md",
+              "sha256": "89dccb58b77f9a390b16182df4cab860fef730071254ec037500cff7bec2841b"
+            }
+          ]
+        },
+        {
+          "name": "base",
+          "version": "0.0.1",
+          "files": [
+            {
+              "path": ".ai-data-compass/LICENSE",
+              "sha256": "7855e5495a9ce920eeb81a736de82ea876924354c2e67e026a66dd5e27c527dc"
+            },
+            {
+              "path": ".ai-data-compass/THIRD-PARTY-NOTICES.md",
+              "sha256": "d6b7c7f33df86cc3b5e232abc386f36e59f3f1107213ba4e441ebd4d68ee02d7"
+            },
+            {
+              "path": ".ai-data-compass/docs/README.md",
+              "sha256": "51ea4844669cceba877087ffa03f4b332fbfd6a8db86c25d09e4166d8364e397"
+            },
+            {
+              "path": ".ai-data-compass/docs/ai-agent-skills.md",
+              "sha256": "0950f6254e5bb158849df1745963cd744d219af5a3b0bb7a1ecd5a1b4a0d4055"
+            },
+            {
+              "path": ".ai-data-compass/docs/communication-and-documentation.md",
+              "sha256": "e2fbc390294d7de3ef0488398a1eaeae64c34f16ad086c87bca92ce1d9f3ddda"
+            },
+            {
+              "path": ".ai-data-compass/docs/development-patterns.md",
+              "sha256": "6aea8e1d2d4886e4d752d946ee08a298e52478d94bd774d014e854f5f17c8b89"
+            },
+            {
+              "path": ".ai-data-compass/docs/distribution.md",
+              "sha256": "b49eaeb7d842d213278a4fb41dd05789e98fa7c6f2184dd06df4cce2daf37c07"
+            },
+            {
+              "path": ".ai-data-compass/docs/project-documentation.md",
+              "sha256": "ca81e0d9d1dcec53277d61e62244fd9a1a7c1bd781e8adc63724db6bec2d3624"
+            },
+            {
+              "path": ".ai-data-compass/docs/repository-quality-and-metadata-metrics.md",
+              "sha256": "018143c513fb5eb2a70c0c861fa510a64a2e624a88611e6e6b7921be7fb1693a"
+            },
+            {
+              "path": ".ai-data-compass/docs/scope-and-changes.md",
+              "sha256": "aa2f680a2b3ac8e5dd60545b049d392690c77af1d5ebb5bfd438346c95b5dc32"
+            },
+            {
+              "path": ".ai-data-compass/docs/security-and-privacy.md",
+              "sha256": "9bb17edff3537cc668a46d9888ad0f10fae703907fceb1ab459b8d13be4a3422"
+            },
+            {
+              "path": ".ai-data-compass/docs/task-completion.md",
+              "sha256": "2fbdb276dcc7b461e1e1c0f903cc6a7cc5c348caf6e9e3de0513c08a28dfccd2"
+            },
+            {
+              "path": ".ai-data-compass/docs/tests.md",
+              "sha256": "dfa0d7fd81712f10b367e5e156cafa09affc20c7f3926aac2479329521d59ed9"
+            }
+          ]
+        },
+        {
+          "name": "security_audit",
+          "version": "0.0.1",
+          "files": [
+            {
+              "path": ".agents/skills/security-audit/SKILL.md",
+              "sha256": "bb8bda02860aff03a56455c9bd006223a4642f9ec2239bd52234f8308e7d978e"
+            },
+            {
+              "path": ".ai-data-compass/skills/security-audit/LICENSE",
+              "sha256": "fe79219c8eef2e48a3fe563079a4dd727ba7a152af64bb174b14e783e66da6e5"
+            },
+            {
+              "path": ".ai-data-compass/skills/security-audit/SKILL.md",
+              "sha256": "a9e55cd7414355084d133ac95f0edde93300ce410a0843799a84a109d468ee37"
+            },
+            {
+              "path": ".ai-data-compass/skills/security-audit/THIRD-PARTY-NOTICES.md",
+              "sha256": "a07d8ec78dc05704adb7913b2f28344d2df3869b9f1485e3acb03831a771b1c8"
+            },
+            {
+              "path": ".ai-data-compass/skills/security-audit/references/detection-rules.md",
+              "sha256": "8f633b2924b4e7a4e524b6e1423a5de95dd40973a0c9c2ee422937b9cb7cac76"
+            },
+            {
+              "path": ".ai-data-compass/skills/security-audit/references/report-format.md",
+              "sha256": "1604ecb9e097dd1f9dd800b8c35f8455482ca43c02c8e2bb856f8d55ff7e086f"
+            },
+            {
+              "path": ".ai-data-compass/skills/security-audit/scripts/security-surface.sh",
+              "sha256": "4c13d4a5ca2d8801a48ea1f1185f7e4aa8ee398f6adad6365fe337107458873f"
+            },
+            {
+              "path": ".ai-data-compass/skills/security-audit/tests/test_claude_projection.sh",
+              "sha256": "4d50c886b44f01fbae6fa967cb3238a2fa188f063a60a7c838493b01fbcd8ffa"
+            },
+            {
+              "path": ".ai-data-compass/skills/security-audit/tests/test_codex_projection.sh",
+              "sha256": "2e9b327f84fbd0ac794e372bf384694732138b3ad913c8155a24d6c6d9458d26"
+            },
+            {
+              "path": ".ai-data-compass/skills/security-audit/tests/test_security_surface.sh",
+              "sha256": "1b06476650490a0bf474e6399f0057b56ed1ac197654312f5923678c00e2e0d4"
+            },
+            {
+              "path": ".ai-data-compass/skills/security-audit/tests/test_workflow_security_integration.sh",
+              "sha256": "a1931c6f66dbe55ad1044467e91a36f82610f446ae4fc2b7704a24e4ac45b84e"
+            },
+            {
+              "path": ".claude/skills/security-audit/SKILL.md",
+              "sha256": "9c7095fa10f2b81cc78c94e0b79aa93776dfe991662ecaa5ea51f566d3b3f663"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "package_version": "0.0.2",
+      "distribution_status": "development",
+      "assets": [
+        {
+          "name": "agents.md",
+          "version": "0.0.4",
+          "files": [
+            {
+              "path": ".cursor/rules/agents.mdc",
+              "sha256": "969561d8f33cda5e71c6aa4645559b1705d152bbb1c102103f75c2fdbe77b5ff"
+            },
+            {
+              "path": ".github/copilot-instructions.md",
+              "sha256": "9957665ec5c72332c07f0e7268fabdc0e58def07914d387596a17a5525b067bf"
+            },
+            {
+              "path": ".windsurfrules",
+              "sha256": "47770ced6deed76b627dc2669e39f14a0cea04d7ff0833ab5a4cf3c1496d1a98"
+            },
+            {
+              "path": "AGENTS.md",
+              "sha256": "4c6faf2b307b91cbc4873b30b9ec11e404ab5e49fcc0d8d2e4bbceebc49c7058"
+            },
+            {
+              "path": "CLAUDE.md",
+              "sha256": "5b4333b1e13ad6a5b2ac6575289e7b5e959b0127b697156835c7f2a0fd206780"
+            },
+            {
+              "path": "GEMINI.md",
+              "sha256": "89dccb58b77f9a390b16182df4cab860fef730071254ec037500cff7bec2841b"
+            }
+          ]
+        },
+        {
+          "name": "base",
+          "version": "0.0.2",
+          "files": [
+            {
+              "path": ".ai-data-compass/LICENSE",
+              "sha256": "7855e5495a9ce920eeb81a736de82ea876924354c2e67e026a66dd5e27c527dc"
+            },
+            {
+              "path": ".ai-data-compass/THIRD-PARTY-NOTICES.md",
+              "sha256": "d6b7c7f33df86cc3b5e232abc386f36e59f3f1107213ba4e441ebd4d68ee02d7"
+            },
+            {
+              "path": ".ai-data-compass/docs/README.md",
+              "sha256": "0f3712704538ae948965cbb85cdd41c933f8c3d74cfa73d2fd66a1ed7ba370f9"
+            },
+            {
+              "path": ".ai-data-compass/docs/communication-and-documentation.md",
+              "sha256": "e2fbc390294d7de3ef0488398a1eaeae64c34f16ad086c87bca92ce1d9f3ddda"
+            },
+            {
+              "path": ".ai-data-compass/docs/development-patterns.md",
+              "sha256": "6aea8e1d2d4886e4d752d946ee08a298e52478d94bd774d014e854f5f17c8b89"
+            },
+            {
+              "path": ".ai-data-compass/docs/distribution.md",
+              "sha256": "7e7615ae2a3adf22cd7eadd85a73393fd52de9f943370940e12c7f8a8d35a827"
+            },
+            {
+              "path": ".ai-data-compass/docs/project-documentation.md",
+              "sha256": "ca81e0d9d1dcec53277d61e62244fd9a1a7c1bd781e8adc63724db6bec2d3624"
+            },
+            {
+              "path": ".ai-data-compass/docs/repository-quality-and-metadata-metrics.md",
+              "sha256": "018143c513fb5eb2a70c0c861fa510a64a2e624a88611e6e6b7921be7fb1693a"
+            },
+            {
+              "path": ".ai-data-compass/docs/scope-and-changes.md",
+              "sha256": "aa2f680a2b3ac8e5dd60545b049d392690c77af1d5ebb5bfd438346c95b5dc32"
+            },
+            {
+              "path": ".ai-data-compass/docs/security-and-privacy.md",
+              "sha256": "8f97b598fef3f9c98a2ca1477c1e23028da59d3caa414fd611d9b016a285a751"
+            },
+            {
+              "path": ".ai-data-compass/docs/task-completion.md",
+              "sha256": "190965823b19a62269c21d7a33668904b03770f5d641d75a8ff9f253b09767c7"
+            },
+            {
+              "path": ".ai-data-compass/docs/tests.md",
+              "sha256": "d1e0b55d0a65849b3d41df3801db39b33acb98df4ac907011a69087fdede7519"
+            }
+          ]
+        },
+        {
+          "name": "before_consider_done",
+          "version": "0.0.2",
+          "files": [
+            {
+              "path": ".agents/skills/before-consider-done/SKILL.md",
+              "sha256": "fc9c7e9f6e38860ff18b4fbf6bd27863d17471cde40983923e81ae6975e921eb"
+            },
+            {
+              "path": ".ai-data-compass/skills/before-consider-done/LICENSE",
+              "sha256": "a7c5979459a036871687d03af26e5344aed9a61eaab9e429e033428a1cdcd18f"
+            },
+            {
+              "path": ".ai-data-compass/skills/before-consider-done/SKILL.md",
+              "sha256": "3163d5b76204e77b88d3f0120db9eef07c821e253b8e8446384068835cc71de8"
+            },
+            {
+              "path": ".ai-data-compass/skills/before-consider-done/THIRD-PARTY-NOTICES.md",
+              "sha256": "fdad033bc85b7d48f42c45c1ac95a65a6e35d1f8110a2a7d8972b2ac17f3b33c"
+            },
+            {
+              "path": ".claude/skills/before-consider-done/SKILL.md",
+              "sha256": "f327efdf3912fa71e5dc496ce3829d3c13c64568f57c8b07de5edacd68fb656a"
+            }
+          ]
+        },
+        {
+          "name": "data_quality_testing",
+          "version": "0.0.1",
+          "files": [
+            {
+              "path": ".agents/skills/data-quality-testing/SKILL.md",
+              "sha256": "17c7cd314400b45c99ff394f91e7450294090a8cd786bbe8ce0beaeaf2e8010d"
+            },
+            {
+              "path": ".ai-data-compass/skills/data-quality-testing/LICENSE",
+              "sha256": "8226feaaadb417a32c5a16029097ebd62f3b493d3c56622b882e3adf71a5d949"
+            },
+            {
+              "path": ".ai-data-compass/skills/data-quality-testing/SKILL.md",
+              "sha256": "127c2d0b278c700a0b8f7d8f2c90529d5ebefb7f0ee40969c02ed795bef25a36"
+            },
+            {
+              "path": ".ai-data-compass/skills/data-quality-testing/THIRD-PARTY-NOTICES.md",
+              "sha256": "99c96f3ad406a1061c4f17c687c0bacd276cf4ed15cebd4f8af1721b860a0731"
+            },
+            {
+              "path": ".ai-data-compass/skills/data-quality-testing/references/execution-planning.md",
+              "sha256": "ce5ff760cef4585e32a067ccd446706322a74cef66a7b12174d477047285744f"
+            },
+            {
+              "path": ".claude/skills/data-quality-testing/SKILL.md",
+              "sha256": "17c7cd314400b45c99ff394f91e7450294090a8cd786bbe8ce0beaeaf2e8010d"
+            }
+          ]
+        },
+        {
+          "name": "documentation_validation",
+          "version": "0.0.1",
+          "files": [
+            {
+              "path": ".agents/skills/documentation-validation/SKILL.md",
+              "sha256": "708509f8f272a1077a3666d446bac154f123ee17e5ef486e8f0a23836281657b"
+            },
+            {
+              "path": ".ai-data-compass/skills/documentation-validation/LICENSE",
+              "sha256": "f1a9d7a838bcc0a326ae4056a33f490192a423cf2a8ece0248701713baa59055"
+            },
+            {
+              "path": ".ai-data-compass/skills/documentation-validation/SKILL.md",
+              "sha256": "2279bb9cd20cbed9bc8d28731751b438b64167d37948f7a1c6a7c774d440a4bf"
+            },
+            {
+              "path": ".ai-data-compass/skills/documentation-validation/THIRD-PARTY-NOTICES.md",
+              "sha256": "e4f84e95b00763e9fba7b92096822fa258eed80e0378eda665ce7a381fdc7c32"
+            },
+            {
+              "path": ".ai-data-compass/skills/documentation-validation/scripts/check_links.py",
+              "sha256": "a9b0a217f98453031fff9231105cce47c487aa4d57c60aff2f50392062700fb9"
+            },
+            {
+              "path": ".ai-data-compass/skills/documentation-validation/subskills/documentation-accuracy/SKILL.md",
+              "sha256": "92a13a76b36aea8d2e29c67b833c301cb7baa2c517e29504e11d50212f0fd4f0"
+            },
+            {
+              "path": ".ai-data-compass/skills/documentation-validation/subskills/documentation-links/SKILL.md",
+              "sha256": "101d9239512ae7da3ad02049fb1e978cd52a1b7c64f0284a36a8d5069e67fc04"
+            },
+            {
+              "path": ".claude/skills/documentation-validation/SKILL.md",
+              "sha256": "e639f28fd37cc03257ad46cc0e327205b117ce516d8cc3d974724a22587beab2"
+            }
+          ]
+        },
+        {
+          "name": "project_quality_metrics",
+          "version": "0.0.1",
+          "files": [
+            {
+              "path": ".agents/skills/project-quality-metrics/SKILL.md",
+              "sha256": "83547421a0f7e5449253879e9a5af6b95dd9d205b14faf1bd03e541d38ce6ae3"
+            },
+            {
+              "path": ".ai-data-compass/skills/project-quality-metrics/LICENSE",
+              "sha256": "2f623640d1591842c67d054a7860872f63dfa3f4668a8d1451aa82b36656fc3a"
+            },
+            {
+              "path": ".ai-data-compass/skills/project-quality-metrics/SKILL.md",
+              "sha256": "7bb3e8a5eac19a83a8c28f7586c86fc0bf0118d421d7f6caa3e27c6c094629d7"
+            },
+            {
+              "path": ".ai-data-compass/skills/project-quality-metrics/THIRD-PARTY-NOTICES.md",
+              "sha256": "857ccfd9afae2786d290c33692e756caeef580b85999a086c1d835421db82ee0"
+            },
+            {
+              "path": ".ai-data-compass/skills/project-quality-metrics/references/metric-history.md",
+              "sha256": "713f454f8d81b583706181d6e0ec44f35afccba769fa5a27e9aa86e2ec45ef7e"
+            },
+            {
+              "path": ".claude/skills/project-quality-metrics/SKILL.md",
+              "sha256": "83547421a0f7e5449253879e9a5af6b95dd9d205b14faf1bd03e541d38ce6ae3"
+            }
+          ]
+        },
+        {
+          "name": "project_review",
+          "version": "0.0.1",
+          "files": [
+            {
+              "path": ".agents/skills/project-review/SKILL.md",
+              "sha256": "1692ad1796caa350101ada8ef29ae183840af5ae1cd728b3e4ade7fee0e59592"
+            },
+            {
+              "path": ".ai-data-compass/skills/project-review/LICENSE",
+              "sha256": "28019c4e8397bcc7886d352c32bbb128d34892042a59aad30e40a9baab982cd5"
+            },
+            {
+              "path": ".ai-data-compass/skills/project-review/SKILL.md",
+              "sha256": "db23701c0761fabc4818f81039a01f846ac153e850ef9dc37321bbe3e9819347"
+            },
+            {
+              "path": ".ai-data-compass/skills/project-review/THIRD-PARTY-NOTICES.md",
+              "sha256": "4bcb975ac80db21548e4ca8da1a10412ffbb1d481aaebff8082e82e9fcabe0ab"
+            },
+            {
+              "path": ".claude/skills/project-review/SKILL.md",
+              "sha256": "8c3543c15879481ab6a1c38c914b97c2ed80d1b1d58fb1f03221b3a85b1fc9c6"
+            }
+          ]
+        },
+        {
+          "name": "security_audit",
+          "version": "0.0.2",
+          "files": [
+            {
+              "path": ".agents/skills/security-audit/SKILL.md",
+              "sha256": "bb8bda02860aff03a56455c9bd006223a4642f9ec2239bd52234f8308e7d978e"
+            },
+            {
+              "path": ".ai-data-compass/skills/security-audit/LICENSE",
+              "sha256": "fe79219c8eef2e48a3fe563079a4dd727ba7a152af64bb174b14e783e66da6e5"
+            },
+            {
+              "path": ".ai-data-compass/skills/security-audit/SKILL.md",
+              "sha256": "eec116932adb2a7a2d2c994b9eafa10e476f9b2c91dbdb3da9763a0c5eea7344"
+            },
+            {
+              "path": ".ai-data-compass/skills/security-audit/THIRD-PARTY-NOTICES.md",
+              "sha256": "a07d8ec78dc05704adb7913b2f28344d2df3869b9f1485e3acb03831a771b1c8"
+            },
+            {
+              "path": ".ai-data-compass/skills/security-audit/references/detection-rules.md",
+              "sha256": "8f633b2924b4e7a4e524b6e1423a5de95dd40973a0c9c2ee422937b9cb7cac76"
+            },
+            {
+              "path": ".ai-data-compass/skills/security-audit/references/report-format.md",
+              "sha256": "99ba2b9b30696184201f0dc21704ce5a33f157b9f03fc4ee17fe12297869f6ce"
+            },
+            {
+              "path": ".ai-data-compass/skills/security-audit/scripts/security-surface.sh",
+              "sha256": "b07911a33221fe2d02e38bca78c968ea0992d0f15f0455e5a67fbc0ca6fe995f"
+            },
+            {
+              "path": ".ai-data-compass/skills/security-audit/tests/test_claude_projection.sh",
+              "sha256": "a55dd4ee856b5388744a586c4671782ac8fd7ea09e230f2c33966fb035c94eef"
+            },
+            {
+              "path": ".ai-data-compass/skills/security-audit/tests/test_codex_projection.sh",
+              "sha256": "1a54998682c5a5d29c2d39794901eed7b0a0d3b6128f424a1278e2648bd2b472"
+            },
+            {
+              "path": ".ai-data-compass/skills/security-audit/tests/test_security_surface.sh",
+              "sha256": "d7c22741118e977a54d1384a590334c2b358573ed754e8f95044b96e2cb722ee"
+            },
+            {
+              "path": ".ai-data-compass/skills/security-audit/tests/test_workflow_security_integration.sh",
+              "sha256": "a1931c6f66dbe55ad1044467e91a36f82610f446ae4fc2b7704a24e4ac45b84e"
+            },
+            {
+              "path": ".claude/skills/security-audit/SKILL.md",
+              "sha256": "6eaa945067b2c2b04e1b7131a2aa78410507696696fd269c3ca1ab7ab0e59cbc"
+            }
+          ]
+        },
+        {
+          "name": "test_gap_review",
+          "version": "0.0.1",
+          "files": [
+            {
+              "path": ".agents/skills/test-gap-review/SKILL.md",
+              "sha256": "5af7077840af4894dba722bd17d0c287faa6b62662895dda9a10f43dc8c891fa"
+            },
+            {
+              "path": ".ai-data-compass/skills/test-gap-review/LICENSE",
+              "sha256": "102bb631a46756eb26e9e58aef6be75addb777227e32ec97deea2726311f9091"
+            },
+            {
+              "path": ".ai-data-compass/skills/test-gap-review/SKILL.md",
+              "sha256": "534b9b6700ab331afea43261c9a52f91591b6bf2067be35bb375aedbd1678499"
+            },
+            {
+              "path": ".ai-data-compass/skills/test-gap-review/THIRD-PARTY-NOTICES.md",
+              "sha256": "876effaeb5bad0550d202e690522eba20f0d73a6cc5605b7ee59f3a455c47952"
+            },
+            {
+              "path": ".claude/skills/test-gap-review/SKILL.md",
+              "sha256": "5af7077840af4894dba722bd17d0c287faa6b62662895dda9a10f43dc8c891fa"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
